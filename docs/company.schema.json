@@ -1,0 +1,616 @@
+{
+  "$defs": {
+    "Address": {
+      "properties": {
+        "street": {
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Street",
+          "type": "string"
+        },
+        "house_number": {
+          "pattern": "^\\d{1,4}[a-zA-Z]?$",
+          "title": "House Number",
+          "type": "string"
+        },
+        "postal_code": {
+          "pattern": "^\\d{5}$",
+          "title": "Postal Code",
+          "type": "string"
+        },
+        "city": {
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "City",
+          "type": "string"
+        },
+        "district": {
+          "anyOf": [
+            {
+              "maxLength": 160,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "District"
+        },
+        "state": {
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "State",
+          "type": "string"
+        },
+        "country_code": {
+          "pattern": "^[A-Z]{2}$",
+          "title": "Country Code",
+          "type": "string"
+        }
+      },
+      "required": [
+        "street",
+        "house_number",
+        "postal_code",
+        "city",
+        "state",
+        "country_code"
+      ],
+      "title": "Address",
+      "type": "object"
+    },
+    "Audience": {
+      "properties": {
+        "segments": {
+          "items": {
+            "$ref": "#/$defs/AudienceSegment"
+          },
+          "maxItems": 5,
+          "minItems": 2,
+          "title": "Segments",
+          "type": "array"
+        },
+        "client_problem": {
+          "description": "Проблема клиента до сервиса.",
+          "maxLength": 2000,
+          "minLength": 40,
+          "title": "Client Problem",
+          "type": "string"
+        }
+      },
+      "required": [
+        "segments",
+        "client_problem"
+      ],
+      "title": "Audience",
+      "type": "object"
+    },
+    "AudienceSegment": {
+      "properties": {
+        "name": {
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "description": {
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "description"
+      ],
+      "title": "AudienceSegment",
+      "type": "object"
+    },
+    "Benefit": {
+      "properties": {
+        "title": {
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "description": {
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        }
+      },
+      "required": [
+        "title",
+        "description"
+      ],
+      "title": "Benefit",
+      "type": "object"
+    },
+    "Brand": {
+      "description": "Название бренда и юридического лица.",
+      "properties": {
+        "name": {
+          "description": "Название бренда.",
+          "maxLength": 60,
+          "minLength": 2,
+          "title": "Name",
+          "type": "string"
+        },
+        "legal_form": {
+          "description": "Правовая форма: GmbH, UG, AG.",
+          "title": "Legal Form",
+          "type": "string"
+        },
+        "legal_name": {
+          "description": "Полное наименование юрлица, например «Kestrel Data GmbH».",
+          "title": "Legal Name",
+          "type": "string"
+        },
+        "tagline": {
+          "description": "Короткое позиционирование, одна фраза.",
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Tagline",
+          "type": "string"
+        },
+        "domain": {
+          "description": "Домен сайта без протокола.",
+          "pattern": "^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\\.[a-z0-9-]+)*\\.[a-z]{2,}$",
+          "title": "Domain",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "legal_form",
+        "legal_name",
+        "tagline",
+        "domain"
+      ],
+      "title": "Brand",
+      "type": "object"
+    },
+    "Contacts": {
+      "properties": {
+        "address": {
+          "$ref": "#/$defs/Address"
+        },
+        "city_key": {
+          "description": "Ключ города из каталога страны.",
+          "title": "City Key",
+          "type": "string"
+        },
+        "phone": {
+          "description": "Телефон в формате E.164.",
+          "pattern": "^\\+\\d{8,15}$",
+          "title": "Phone",
+          "type": "string"
+        },
+        "phone_display": {
+          "description": "Телефон в местном формате записи.",
+          "title": "Phone Display",
+          "type": "string"
+        },
+        "email": {
+          "pattern": "^[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,}$",
+          "title": "Email",
+          "type": "string"
+        },
+        "office_hours": {
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Office Hours",
+          "type": "string"
+        }
+      },
+      "required": [
+        "address",
+        "city_key",
+        "phone",
+        "phone_display",
+        "email",
+        "office_hours"
+      ],
+      "title": "Contacts",
+      "type": "object"
+    },
+    "FaqItem": {
+      "properties": {
+        "question": {
+          "minLength": 1,
+          "title": "Question",
+          "type": "string"
+        },
+        "answer": {
+          "minLength": 1,
+          "title": "Answer",
+          "type": "string"
+        }
+      },
+      "required": [
+        "question",
+        "answer"
+      ],
+      "title": "FaqItem",
+      "type": "object"
+    },
+    "Gender": {
+      "enum": [
+        "female",
+        "male"
+      ],
+      "title": "Gender",
+      "type": "string"
+    },
+    "History": {
+      "properties": {
+        "founded_year": {
+          "maximum": 2100,
+          "minimum": 1990,
+          "title": "Founded Year",
+          "type": "integer"
+        },
+        "employees": {
+          "maximum": 10000,
+          "minimum": 1,
+          "title": "Employees",
+          "type": "integer"
+        },
+        "founding_story": {
+          "description": "Как и почему появилась компания.",
+          "maxLength": 2000,
+          "minLength": 40,
+          "title": "Founding Story",
+          "type": "string"
+        },
+        "specialization": {
+          "description": "В чём компания сильна и что не делает.",
+          "maxLength": 2000,
+          "minLength": 40,
+          "title": "Specialization",
+          "type": "string"
+        },
+        "milestones": {
+          "items": {
+            "$ref": "#/$defs/Milestone"
+          },
+          "maxItems": 8,
+          "minItems": 2,
+          "title": "Milestones",
+          "type": "array"
+        }
+      },
+      "required": [
+        "founded_year",
+        "employees",
+        "founding_story",
+        "specialization",
+        "milestones"
+      ],
+      "title": "History",
+      "type": "object"
+    },
+    "Milestone": {
+      "properties": {
+        "year": {
+          "maximum": 2100,
+          "minimum": 1990,
+          "title": "Year",
+          "type": "integer"
+        },
+        "title": {
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "description": {
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        }
+      },
+      "required": [
+        "year",
+        "title",
+        "description"
+      ],
+      "title": "Milestone",
+      "type": "object"
+    },
+    "Person": {
+      "properties": {
+        "id": {
+          "description": "Стабильный slug человека.",
+          "pattern": "^[a-z0-9-]+$",
+          "title": "Id",
+          "type": "string"
+        },
+        "first_name": {
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "First Name",
+          "type": "string"
+        },
+        "last_name": {
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Last Name",
+          "type": "string"
+        },
+        "gender": {
+          "$ref": "#/$defs/Gender"
+        },
+        "age": {
+          "maximum": 75,
+          "minimum": 22,
+          "title": "Age",
+          "type": "integer"
+        },
+        "role": {
+          "$ref": "#/$defs/TeamRole"
+        },
+        "position": {
+          "description": "Должность в том виде, как на сайте.",
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Position",
+          "type": "string"
+        },
+        "department": {
+          "anyOf": [
+            {
+              "maxLength": 160,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Department"
+        },
+        "bio": {
+          "maxLength": 700,
+          "minLength": 80,
+          "title": "Bio",
+          "type": "string"
+        },
+        "experience": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 5,
+          "minItems": 1,
+          "title": "Experience",
+          "type": "array"
+        },
+        "education": {
+          "minLength": 1,
+          "title": "Education",
+          "type": "string"
+        },
+        "photo": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Photo"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "id",
+        "first_name",
+        "last_name",
+        "gender",
+        "age",
+        "role",
+        "position",
+        "bio",
+        "experience",
+        "education"
+      ],
+      "title": "Person",
+      "type": "object"
+    },
+    "Photo": {
+      "properties": {
+        "file": {
+          "description": "Путь к файлу относительно папки медиа компании.",
+          "title": "File",
+          "type": "string"
+        },
+        "alt": {
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Alt",
+          "type": "string"
+        }
+      },
+      "required": [
+        "file",
+        "alt"
+      ],
+      "title": "Photo",
+      "type": "object"
+    },
+    "ProcessStep": {
+      "properties": {
+        "title": {
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "description": {
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        }
+      },
+      "required": [
+        "title",
+        "description"
+      ],
+      "title": "ProcessStep",
+      "type": "object"
+    },
+    "Product": {
+      "properties": {
+        "name": {
+          "maxLength": 80,
+          "minLength": 2,
+          "title": "Name",
+          "type": "string"
+        },
+        "summary": {
+          "maxLength": 2000,
+          "minLength": 40,
+          "title": "Summary",
+          "type": "string"
+        },
+        "inputs": {
+          "description": "Какие данные нужны на входе.",
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 2,
+          "title": "Inputs",
+          "type": "array"
+        },
+        "process": {
+          "items": {
+            "$ref": "#/$defs/ProcessStep"
+          },
+          "maxItems": 6,
+          "minItems": 3,
+          "title": "Process",
+          "type": "array"
+        },
+        "outputs": {
+          "description": "Что клиент получает.",
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 2,
+          "title": "Outputs",
+          "type": "array"
+        },
+        "limitations": {
+          "description": "Чего сервис не делает и где его границы.",
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 2,
+          "title": "Limitations",
+          "type": "array"
+        },
+        "benefits": {
+          "items": {
+            "$ref": "#/$defs/Benefit"
+          },
+          "maxItems": 4,
+          "minItems": 3,
+          "title": "Benefits",
+          "type": "array"
+        },
+        "delivery": {
+          "description": "Формат и сроки поставки результата.",
+          "minLength": 1,
+          "title": "Delivery",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "summary",
+        "inputs",
+        "process",
+        "outputs",
+        "limitations",
+        "benefits",
+        "delivery"
+      ],
+      "title": "Product",
+      "type": "object"
+    },
+    "TeamRole": {
+      "description": "Место человека в структуре компании.",
+      "enum": [
+        "ceo",
+        "department_head",
+        "specialist"
+      ],
+      "title": "TeamRole",
+      "type": "string"
+    }
+  },
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "content_language": {
+      "const": "ru",
+      "default": "ru",
+      "title": "Content Language",
+      "type": "string"
+    },
+    "brand": {
+      "$ref": "#/$defs/Brand"
+    },
+    "contacts": {
+      "$ref": "#/$defs/Contacts"
+    },
+    "history": {
+      "$ref": "#/$defs/History"
+    },
+    "audience": {
+      "$ref": "#/$defs/Audience"
+    },
+    "product": {
+      "$ref": "#/$defs/Product"
+    },
+    "team": {
+      "items": {
+        "$ref": "#/$defs/Person"
+      },
+      "minItems": 1,
+      "title": "Team",
+      "type": "array"
+    },
+    "faq": {
+      "items": {
+        "$ref": "#/$defs/FaqItem"
+      },
+      "title": "Faq",
+      "type": "array"
+    }
+  },
+  "required": [
+    "brand",
+    "contacts",
+    "history",
+    "audience",
+    "product",
+    "team"
+  ],
+  "title": "CompanyProfile",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Карточка компании: единый источник фактов для всех страниц сайта. Тексты карточки хранятся на русском, сайт может выпускаться на русском или немецком."
+}
