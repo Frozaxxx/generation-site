@@ -1,0 +1,155 @@
+[project]
+name = "generation-site"
+version = "0.1.0"
+description = "Панель генерации профилей компаний и сайтов на их основе"
+readme = "../README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "aiosqlite>=0.21.0",
+    "alembic>=1.16.0",
+    "fastapi[standard]>=0.120.0",
+    "httpx>=0.28.1",
+    "jinja2>=3.1.6",
+    "pillow>=12.0.0",
+    "pydantic>=2.12.0",
+    "pydantic-settings>=2.11.0",
+    "python-dotenv>=1.1.0",
+    "python-json-logger>=4.0.0",
+    "sqlalchemy[asyncio]>=2.0.44",
+    "tzdata>=2025.2",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.0",
+    "pytest-asyncio>=1.2.0",
+    "ruff>=0.14.0",
+]
+
+
+# ---------------------------------------------------------------------------
+# Pytest
+# ---------------------------------------------------------------------------
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+
+
+# ---------------------------------------------------------------------------
+# Ruff
+# ---------------------------------------------------------------------------
+
+[tool.ruff]
+target-version = "py314"
+line-length = 99
+
+extend-exclude = [
+    "migrations",
+    "alembic.ini",
+    "**/__pycache__",
+    "**/.ruff_cache",
+    "**/.venv",
+]
+
+
+# ---------------------------------------------------------------------------
+# Ruff lint
+# ---------------------------------------------------------------------------
+
+[tool.ruff.lint]
+
+select = [
+    "F",      # Pyflakes
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "C90",    # mccabe complexity
+    "I",      # isort
+    "N",      # pep8-naming
+    "UP",     # pyupgrade
+    "A",      # flake8-builtins
+    "ASYNC",  # flake8-async
+    "FAST",   # FastAPI-specific rules
+    "B",      # flake8-bugbear
+    "BLE",    # flake8-blind-except
+    "C4",     # flake8-comprehensions
+    "PIE",    # flake8-pie
+    "RET",    # flake8-return
+    "SIM",    # flake8-simplify
+    "S",      # flake8-bandit
+    "DTZ",    # flake8-datetimez
+    "PT",     # flake8-pytest-style
+    "ARG",    # flake8-unused-arguments
+    "SLF",    # flake8-self
+    "G",      # flake8-logging-format
+    "LOG",    # flake8-logging
+    "TRY",    # tryceratops
+    "ERA",    # eradicate
+    "PL",     # pylint
+    "PERF",   # perflint
+    "FURB",   # refurb
+    "RUF",    # Ruff-specific rules
+]
+
+ignore = [
+    "ASYNC109",
+    "N805",
+    "PLW3201",
+    "PLW1641",
+    # Кириллица в комментариях, docstring и строках допустима.
+    "RUF001",
+    "RUF002",
+    "RUF003",
+    "TRY003",
+    "PIE790",
+]
+
+
+[tool.ruff.lint.isort]
+
+section-order = [
+    "future",
+    "typing",
+    "standard-library",
+    "third-party",
+    "first-party",
+    "local-folder",
+]
+
+
+[tool.ruff.lint.isort.sections]
+
+"typing" = ["typing"]
+
+
+[tool.ruff.lint.pylint]
+
+max-args = 15
+max-returns = 10
+max-branches = 30
+
+
+[tool.ruff.lint.per-file-ignores]
+
+"tests/**/*.py" = [
+    "S101",
+    "ARG001",
+    "F401",
+    "PLR2004",
+    "PLR6301",
+    "SLF001",
+]
+
+
+[tool.ruff.format]
+
+line-ending = "lf"
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+docstring-code-format = true
+
+
+[tool.basedpyright]
+typeCheckingMode = "basic"
