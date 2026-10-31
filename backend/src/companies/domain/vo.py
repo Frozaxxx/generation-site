@@ -33,3 +33,7 @@ class GenerationInfo(ValueObject):
     requests: int = 0
     duration_seconds: float = 0.0
     concept: dict[str, str] = field(default_factory=dict)
+    # Смысловая проверка моделью и ревизия карточки, к которой она относится.
+    review: list[dict[str, str]] = field(default_factory=list)
+    review_revision: int | None = None
+    warnings: list[str] = field(default_factory=list)

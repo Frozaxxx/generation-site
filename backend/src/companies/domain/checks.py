@@ -259,15 +259,14 @@ def check_history(profile: CompanyProfile) -> list[Issue]:
                 )
             )
 
-    for index, person in enumerate(profile.team):
-        if person.age - (this_year - history.founded_year) < 18:  # noqa: PLR2004
-            issues.append(
-                _warning(
-                    "person_age",
-                    f"team[{index}].age",
-                    f"{person.full_name} был младше 18 лет при основании компании",
-                )
+    if (ceo := profile.ceo) is not None and ceo.age - (this_year - history.founded_year) < 21:  # noqa: PLR2004
+        issues.append(
+            _warning(
+                "ceo_age",
+                "team",
+                f"{ceo.full_name} был младше 21 года при основании компании",
             )
+        )
 
     return issues
 

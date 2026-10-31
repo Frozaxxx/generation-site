@@ -1,15 +1,16 @@
 from typing import Self
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime
+from uuid import UUID, uuid4
 
 from src.shared.domain.entities import AggregateRoot
-from src.shared.domain.exceptions import InvariantViolationError
+from src.shared.domain.exceptions import InvariantViolationError, NotFoundError
 from src.shared.utils.time import current_datetime
 
 from .checks import Issue, errors_only
 from .enums import CompanyStatus
-from .profile import CompanyProfile
+from .profile import CompanyProfile, Photo
 from .vo import GenerationInfo, GenerationParams
 
 
@@ -34,10 +35,42 @@ class Company(AggregateRoot):
         params: GenerationParams,
         profile: CompanyProfile,
         generation: GenerationInfo | None = None,
+        company_id: UUID | None = None,
     ) -> Self:
-        """Создаёт черновик компании из результата генерации."""
+        """Создаёт черновик компании из результата генерации.
 
-        return cls(params=params, profile=profile, generation=generation)
+        `company_id` задаётся заранее, когда к компании уже привязаны файлы (фото команды).
+        """
+
+        return cls(
+            id=company_id or uuid4(),
+            params=params,
+            profile=profile,
+            generation=generation,
+        )
+
+    def record_review(self, issues: list[dict[str, str]]) -> None:
+        """Сохраняет смысловую проверку текущей ревизии."""
+
+        if self.generation is None:
+            return
+        self.generation = replace(self.generation, review=issues, review_revision=self.revision)
+        self.touch()
+
+    def set_photo(self, person_id: str, photo: Photo) -> None:
+        """Фото не меняет факты карточки, поэтому ревизия не растёт."""
+
+        person = self.profile.person(person_id)
+        if person is None:
+            raise NotFoundError(f"Сотрудник {person_id} не найден")
+        self.profile = replace(
+            self.profile,
+            team=[
+                replace(item, photo=photo) if item.id == person_id else item
+                for item in self.profile.team
+            ],
+        )
+        self.touch()
 
     @property
     def is_approved(self) -> bool:

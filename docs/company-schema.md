@@ -42,7 +42,7 @@
 | `phone_unreserved` (warning) | Номер вне блока Drama Numbers и может принадлежать реальному абоненту |
 | `email_domain` | Почта на домене сайта |
 | `founded_future`, `milestone_year` | Год основания и этапы истории не в будущем и не раньше основания |
-| `person_age` (warning) | Сотрудник не был младше 18 лет при основании компании |
+| `ceo_age` (warning) | Руководитель не был младше 21 года при основании компании |
 | `team_size`, `team_ceo`, `team_heads`, `team_department` | Не меньше 5 человек, один руководитель, минимум два руководителя отделов с указанным отделом |
 | `team_duplicate_id`, `team_duplicate_name` | Нет повторов людей |
 | `faq_size`, `faq_duplicate` | Ровно 5 разных вопросов |
