@@ -84,6 +84,69 @@ def check_openrouter(args: argparse.Namespace) -> None:
     asyncio.run(_check_openrouter(args))
 
 
+async def _generate_company(args: argparse.Namespace) -> None:
+    # Импорты здесь, чтобы export-schema не тянул базу и фоновые задачи.
+    from src.companies.application.generation.facts import GenerationRequest  # noqa: PLC0415
+    from src.companies.application.generation.pipeline import (  # noqa: PLC0415
+        STAGE_LABELS,
+        CompanyGenerator,
+    )
+    from src.companies.application.generation.service import (  # noqa: PLC0415
+        CompanyGenerationService,
+    )
+    from src.companies.domain.enums import CompanyScale  # noqa: PLC0415
+    from src.core.database import session_factory  # noqa: PLC0415
+    from src.core.migrations import upgrade_database  # noqa: PLC0415
+    from src.jobs.application.runner import JobRunner  # noqa: PLC0415
+    from src.jobs.infra.database.repos.jobs import SqlJobRepository  # noqa: PLC0415
+
+    ensure_llm_configured()
+    storage_config.media_dir.mkdir(parents=True, exist_ok=True)
+    await asyncio.to_thread(upgrade_database)
+
+    client = OpenRouterClient(openrouter_config)
+    runner = JobRunner(session_factory)
+    service = CompanyGenerationService(runner, CompanyGenerator(client, session_factory))
+    request = GenerationRequest(
+        brand_name=args.brand,
+        scale=CompanyScale(args.scale) if args.scale else None,
+        service_type=args.service_type,
+        model=resolve_text_model(args.model) if args.model else None,
+        with_photos=not args.no_photos,
+    )
+    job = await service.start(request, new_budget())
+    _print(f"Задача {job.id}")
+
+    last = None
+    while True:
+        async with session_factory() as session:
+            current = await SqlJobRepository(session).read(job.id)
+        if current is not None:
+            line = f"[{current.stage or '-'}] {current.message} · ${current.cost_usd:.4f}"
+            if line != last:
+                _print(line)
+                last = line
+            if current.status.is_finished:
+                break
+        await asyncio.sleep(1)
+
+    await runner.wait_all()
+    await client.aclose()
+
+    if current.error:
+        _print(f"Ошибка: {current.error.code} - {current.error.message}")
+        return
+    _print(f"Компания: {current.result_id}")
+    _print(f"Этапы: {', '.join(STAGE_LABELS[stage] for stage in current.stages)}")
+    _print(f"Запросов {current.requests}, стоимость ${current.cost_usd:.4f}")
+
+
+def generate_company(args: argparse.Namespace) -> None:
+    """Генерация компании из терминала с выводом этапов."""
+
+    asyncio.run(_generate_company(args))
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(prog="python -m src.cli")
     commands = parser.add_subparsers(dest="command", required=True)
@@ -94,8 +157,19 @@ def main() -> None:
     check.add_argument("--model", default=None, help="Модель из OPENROUTER_ALLOWED_TEXT_MODELS")
     check.add_argument("--image", action="store_true", help="Сгенерировать тестовое фото")
 
+    generate = commands.add_parser("generate-company", help="Сгенерировать компанию")
+    generate.add_argument("--brand", default=None, help="Название бренда")
+    generate.add_argument("--scale", choices=["small", "medium"], default=None)
+    generate.add_argument("--service-type", default=None, help="Например earnings_analysis")
+    generate.add_argument("--model", default=None)
+    generate.add_argument("--no-photos", action="store_true", help="Без фото команды")
+
     args = parser.parse_args()
-    {"export-schema": export_schema, "check-openrouter": check_openrouter}[args.command](args)
+    {
+        "export-schema": export_schema,
+        "check-openrouter": check_openrouter,
+        "generate-company": generate_company,
+    }[args.command](args)
 
 
 if __name__ == "__main__":

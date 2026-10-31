@@ -4,6 +4,7 @@ from dataclasses import asdict
 
 from ..domain.checks import Issue, check_profile
 from ..domain.entities import Company
+from ..domain.enums import IssueSeverity
 from ..domain.serialization import profile_to_dict
 from .dtos import CompanyListItem, CompanyRead, IssueRead
 
@@ -28,6 +29,7 @@ def to_list_item(company: Company) -> CompanyListItem:
 def to_read(company: Company, issues: list[Issue] | None = None) -> CompanyRead:
     if issues is None:
         issues = check_profile(company.profile, company.params.country)
+    issues = [*issues, *review_issues(company)]
 
     return CompanyRead(
         id=company.id,
@@ -41,6 +43,26 @@ def to_read(company: Company, issues: list[Issue] | None = None) -> CompanyRead:
         updated_at=company.updated_at,
         approved_at=company.approved_at,
     )
+
+
+def review_issues(company: Company) -> list[Issue]:
+    """
+    Замечания смысловой проверки моделью. Показываем их только для той ревизии, которую
+    проверяли, и как предупреждения: окончательное решение за человеком.
+    """
+
+    info = company.generation
+    if info is None or info.review_revision != company.revision:
+        return []
+    return [
+        Issue(
+            code=f"review_{item.get('severity', 'warning')}",
+            severity=IssueSeverity.WARNING,
+            path=item.get("path", ""),
+            message=f"Смысловая проверка: {item.get('message', '')}",
+        )
+        for item in info.review
+    ]
 
 
 def to_export(company: Company) -> dict[str, Any]:

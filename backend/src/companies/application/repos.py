@@ -19,6 +19,8 @@ class CompanyRepository(Protocol):
 
     async def delete(self, uid: UUID) -> None: ...
 
+    async def recent_concepts(self, limit: int) -> list[dict[str, str]]: ...
+
     async def find(
         self,
         pagination: Pagination,

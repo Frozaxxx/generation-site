@@ -5,6 +5,8 @@ from uuid import UUID
 from fastapi import APIRouter, Query, status
 from fastapi.responses import JSONResponse
 
+from src.jobs.application.dtos import JobRead
+from src.llm.dependencies import ensure_llm_configured, new_budget, resolve_text_model
 from src.shared.application.dtos import Page
 from src.shared.dependencies import PaginationDep
 
@@ -14,10 +16,13 @@ from ...application.dtos import (
     CompanyFilters,
     CompanyListItem,
     CompanyRead,
+    GenerateCompanyRequest,
+    PaidActionRequest,
     ProfileUpdate,
 )
+from ...application.generation.facts import GenerationRequest
 from ...application.mappers import to_export, to_list_item, to_read
-from ...dependencies import CompanyServiceDep
+from ...dependencies import CompanyAIServiceDep, CompanyGenerationServiceDep, CompanyServiceDep
 
 router = APIRouter(tags=["Компании"])
 
@@ -43,6 +48,60 @@ async def get_companies(
         page=page.page,
         size=page.size,
     )
+
+
+@router.post(
+    "/companies/generate",
+    status_code=status.HTTP_202_ACCEPTED,
+    response_model=JobRead,
+)
+async def generate_company(
+    data: GenerateCompanyRequest,
+    service: CompanyGenerationServiceDep,
+) -> JobRead:
+    """Запускает генерацию компании в фоне. Прогресс - `GET /jobs/{id}`."""
+
+    ensure_llm_configured()
+    request = GenerationRequest(
+        brand_name=data.brand_name,
+        country=data.country,
+        direction=data.direction,
+        service_type=data.service_type,
+        scale=data.scale,
+        model=resolve_text_model(data.model) if data.model else None,
+        with_photos=data.with_photos,
+    )
+    job = await service.start(request, new_budget(data.budget_usd))
+    return JobRead.from_entity(job)
+
+
+@router.post("/companies/{company_id}/review", response_model=CompanyRead)
+async def review_company(
+    company_id: UUID,
+    data: PaidActionRequest,
+    service: CompanyAIServiceDep,
+) -> CompanyRead:
+    """Платная смысловая проверка текущей ревизии карточки моделью."""
+
+    ensure_llm_configured()
+    company = await service.review(
+        company_id, resolve_text_model(data.model), new_budget(data.budget_usd)
+    )
+    return to_read(company)
+
+
+@router.post("/companies/{company_id}/team/{person_id}/photo", response_model=CompanyRead)
+async def regenerate_photo(
+    company_id: UUID,
+    person_id: str,
+    data: PaidActionRequest,
+    service: CompanyAIServiceDep,
+) -> CompanyRead:
+    """Создаёт новое фото сотрудника (платно). Факты карточки не меняются."""
+
+    ensure_llm_configured()
+    company = await service.regenerate_photo(company_id, person_id, new_budget(data.budget_usd))
+    return to_read(company)
 
 
 @router.get("/companies/{company_id}", response_model=CompanyRead)

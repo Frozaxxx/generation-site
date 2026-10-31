@@ -13,6 +13,26 @@ class SqlCompanyRepository(SqlAlchemyRepository[Company, CompanyOrm]):
     model = CompanyOrm
     model_mapper = CompanyMapper
 
+    async def recent_concepts(self, limit: int) -> list[dict[str, str]]:
+        """Краткое описание последних компаний, чтобы новые на них не походили."""
+
+        stmt = select(self.model).order_by(self.model.created_at.desc()).limit(limit)
+        rows = (await self._session.execute(stmt)).scalars().all()
+
+        concepts = []
+        for row in rows:
+            profile, generation = row.profile, row.generation or {}
+            concepts.append(
+                {
+                    "бренд": profile["brand"]["name"],
+                    "слоган": profile["brand"]["tagline"],
+                    "продукт": profile["product"]["name"],
+                    "ниша": (generation.get("concept") or {}).get("ниша", ""),
+                    "основание": profile["history"]["founding_story"][:240],
+                }
+            )
+        return concepts
+
     async def find(
         self,
         pagination: Pagination,

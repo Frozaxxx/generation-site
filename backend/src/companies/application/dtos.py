@@ -66,6 +66,32 @@ class ProfileUpdate(BaseModel):
     revision: int = Field(ge=1, description="Ревизия, с которой начиналось редактирование.")
 
 
+class GenerateCompanyRequest(BaseModel):
+    """Параметры генерации. Пустое поле - случайное значение из каталога."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    brand_name: str | None = Field(default=None, max_length=40)
+    country: str | None = Field(default=None, examples=["DE"])
+    direction: str | None = Field(default=None, examples=["ai_investment_research"])
+    service_type: str | None = Field(default=None, examples=["earnings_analysis"])
+    scale: CompanyScale | None = None
+    model: str | None = Field(default=None, examples=["google/gemini-2.5-flash"])
+    with_photos: bool = Field(default=True, description="Генерировать фото команды.")
+    budget_usd: float | None = Field(
+        default=None,
+        gt=0,
+        description="Лимит операции, не больше OPENROUTER_OPERATION_BUDGET_USD.",
+    )
+
+
+class PaidActionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    model: str | None = None
+    budget_usd: float | None = Field(default=None, gt=0)
+
+
 class CatalogOption(BaseModel):
     key: str
     label: str
