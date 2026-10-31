@@ -21,7 +21,7 @@
 - `LangGraph` — граф генерации компании
 - `OpenRouter` — тексты и фото команды
 - `Jinja2` — шаблон генерируемого сайта
-- `React` / `TypeScript` / `Vite` / `Tailwind` — панель (этап 3)
+- `React 18` / `TypeScript` / `Vite` / `Tailwind 4` / `Zustand` / `React Router 7` — панель
 
 ## Запуск
 
@@ -34,11 +34,19 @@ uv run python main.py         # http://127.0.0.1:8000/docs
 
 Миграции применяются автоматически при старте. Данные лежат в `backend/data/` (в git не попадают).
 
-Через Docker:
+Панель:
+
+```bash
+cd frontend
+npm install
+npm run dev                   # http://localhost:5173, /api и /media проксируются на :8000
+```
+
+Через Docker (backend + панель):
 
 ```bash
 cp backend/.env.example backend/.env   # вписать OPENROUTER_API_KEY
-docker compose up -d --build           # http://localhost:8000/docs
+docker compose up -d --build           # панель http://localhost:3000, API http://localhost:8000/docs
 ```
 
 Данные хранятся в volume `backend-data`.
@@ -81,6 +89,18 @@ backend/src/
 ```
 
 Правило зависимостей: `api → dependencies → application → domain`, `infra` реализует протоколы из `application`. Домен не знает про FastAPI и базу.
+
+Панель — FSD, слой импортирует только слои ниже себя:
+
+```plain
+frontend/src/
+├── app/        # точка входа, маршруты, глобальные стили и токены
+├── pages/      # companies, company-new, company
+├── widgets/    # app-shell, company-issues
+├── features/   # generate-company, edit-company-profile
+├── entities/   # company, job, catalog
+└── shared/     # requestJson, форматирование, UI-кит
+```
 
 ### Генерация компании из терминала
 
@@ -132,6 +152,6 @@ uv run python -m src.cli export-schema
 - [x] Этап 1. Каркас, модель данных компании, каталог Германии, проверки согласованности, библиотека компаний (API)
 - [x] Этап 2. Клиент OpenRouter: модели, повторы, проверка ответов, учёт стоимости, лимит на операцию; фоновые задачи с этапами; Docker
 - [x] Этап 3a. Генерация компании: факты, концепция, продукт, команда, смысловая проверка, фото
-- [ ] Этап 3b. Панель: форма генерации, библиотека, карточка, редактирование, утверждение
+- [x] Этап 3b. Панель: форма генерации с прогрессом, библиотека, карточка с редактированием, проверками, фото и утверждением
 - [ ] Этап 4. Генерация сайта: шаблон, темы, SEO, RU/DE, версии, предпросмотр, ZIP
 - [ ] Этап 5. Два готовых примера, финальная проверка
