@@ -97,7 +97,71 @@ AI_INVESTMENT_RESEARCH = Direction(
     ),
 )
 
-DIRECTIONS: dict[str, Direction] = {AI_INVESTMENT_RESEARCH.key: AI_INVESTMENT_RESEARCH}
+AI_COMPLIANCE = Direction(
+    key="ai_compliance",
+    name_ru="ИИ для финансового комплаенса и регуляторной отчётности",
+    description=(
+        "B2B-сервисы, которые помогают банкам, фондам и финтех-компаниям проверять "
+        "контрагентов, разбирать договоры и готовить отчётность для регуляторов."
+    ),
+    service_types=(
+        ServiceType(
+            key="aml_screening",
+            name_ru="Проверка контрагентов (AML/KYC)",
+            description=(
+                "Сверка клиентов и бенефициаров с санкционными списками и открытыми реестрами."
+            ),
+            typical_clients=("банки", "платёжные компании", "управляющие активами"),
+        ),
+        ServiceType(
+            key="regulatory_reporting",
+            name_ru="Подготовка регуляторной отчётности",
+            description=(
+                "Сбор данных и черновики отчётов по требованиям BaFin и европейских регуляторов."
+            ),
+            typical_clients=("небольшие банки", "инвестиционные фирмы", "страховые компании"),
+        ),
+        ServiceType(
+            key="contract_review",
+            name_ru="Разбор кредитных и инвестиционных договоров",
+            description="Извлечение ковенантов, сроков и условий из договоров и проспектов.",
+            typical_clients=(
+                "кредитные отделы банков",
+                "фонды частного долга",
+                "юристы по сделкам",
+            ),
+        ),
+        ServiceType(
+            key="disclosure_monitoring",
+            name_ru="Мониторинг раскрытий и сделок инсайдеров",
+            description=(
+                "Отслеживание обязательных публикаций эмитентов и уведомлений о "
+                "сделках руководства."
+            ),
+            typical_clients=("комплаенс-отделы", "управляющие активами", "IR-отделы эмитентов"),
+        ),
+    ),
+)
+
+DIRECTIONS: dict[str, Direction] = {
+    AI_INVESTMENT_RESEARCH.key: AI_INVESTMENT_RESEARCH,
+    AI_COMPLIANCE.key: AI_COMPLIANCE,
+}
+
+CUSTOM_KEY = "custom"
+
+
+def custom_direction(text: str) -> Direction:
+    """Направление, которое пользователь описал сам."""
+
+    return Direction(key=CUSTOM_KEY, name_ru=text, description=text, service_types=())
+
+
+def custom_service_type(text: str) -> ServiceType:
+    """Тип сервиса, который пользователь описал сам."""
+
+    return ServiceType(key=CUSTOM_KEY, name_ru=text, description=text, typical_clients=())
+
 
 SCALES: dict[CompanyScale, ScaleProfile] = {
     CompanyScale.SMALL: ScaleProfile(

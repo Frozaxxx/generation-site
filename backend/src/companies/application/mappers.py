@@ -2,6 +2,7 @@ from typing import Any
 
 from dataclasses import asdict
 
+from ..domain.catalog import DIRECTIONS
 from ..domain.checks import Issue, check_profile
 from ..domain.entities import Company
 from ..domain.enums import IssueSeverity
@@ -17,6 +18,7 @@ def to_list_item(company: Company) -> CompanyListItem:
         legal_name=profile.brand.legal_name,
         city=profile.contacts.address.city,
         service_type=company.params.service_type,
+        service_label=service_label(company),
         scale=company.params.scale,
         status=company.status,
         revision=company.revision,
@@ -24,6 +26,21 @@ def to_list_item(company: Company) -> CompanyListItem:
         created_at=company.created_at,
         updated_at=company.updated_at,
     )
+
+
+def service_label(company: Company) -> str:
+    params = company.params
+    if params.custom_service:
+        return params.custom_service
+    direction = DIRECTIONS.get(params.direction)
+    try:
+        return (
+            direction.service_type(params.service_type).name_ru
+            if direction
+            else params.service_type
+        )
+    except KeyError:
+        return params.service_type
 
 
 def to_read(company: Company, issues: list[Issue] | None = None) -> CompanyRead:

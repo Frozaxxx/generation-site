@@ -42,6 +42,8 @@ class CompanyGenerationService:
                 "scale": request.scale.value if request.scale else None,
                 "model": request.model,
                 "with_photos": request.with_photos,
+                "custom_direction": request.custom_direction,
+                "custom_service": request.custom_service,
             },
             # Зерно делает выбор фактов воспроизводимым для отладки.
             "seed": secrets.randbits(63),

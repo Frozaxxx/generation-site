@@ -20,6 +20,9 @@ class GenerationParams(ValueObject):
     scale: CompanyScale
     model: str
     randomized: tuple[str, ...] = field(default_factory=tuple)
+    # Свои варианты, если пользователь описал направление или сервис текстом.
+    custom_direction: str | None = None
+    custom_service: str | None = None
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

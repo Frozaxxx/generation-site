@@ -70,6 +70,8 @@ async def generate_company(
         scale=data.scale,
         model=resolve_text_model(data.model) if data.model else None,
         with_photos=data.with_photos,
+        custom_direction=data.custom_direction,
+        custom_service=data.custom_service,
     )
     job = await service.start(request, new_budget(data.budget_usd))
     return JobRead.from_entity(job)

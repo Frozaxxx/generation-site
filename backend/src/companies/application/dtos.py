@@ -34,6 +34,7 @@ class CompanyListItem(BaseModel):
     legal_name: str
     city: str
     service_type: str
+    service_label: str
     scale: CompanyScale
     status: CompanyStatus
     revision: int
@@ -76,6 +77,12 @@ class GenerateCompanyRequest(BaseModel):
     direction: str | None = Field(default=None, examples=["ai_investment_research"])
     service_type: str | None = Field(default=None, examples=["earnings_analysis"])
     scale: CompanyScale | None = None
+    custom_direction: str | None = Field(
+        default=None, max_length=200, description="Своё направление вместо каталога."
+    )
+    custom_service: str | None = Field(
+        default=None, max_length=300, description="Свой тип сервиса вместо каталога."
+    )
     model: str | None = Field(default=None, examples=["google/gemini-2.5-flash"])
     with_photos: bool = Field(default=True, description="Генерировать фото команды.")
     budget_usd: float | None = Field(

@@ -74,3 +74,30 @@ def test_team_photos_do_not_repeat_clothing_and_pose():
         team = facts_for(seed, scale=CompanyScale.MEDIUM).team
         poses = [person.appearance.split("Pose: ")[1].split(".")[0] for person in team]
         assert len(set(poses)) == len(poses)
+
+
+def test_custom_direction_and_service():
+    facts = facts_for(3, custom_direction="ИИ для оценки рисков недвижимости")
+
+    assert facts.params.direction == "custom"
+    assert facts.params.service_type == "custom"
+    assert facts.service_type.name_ru == "ИИ для оценки рисков недвижимости"
+
+
+def test_custom_service_within_catalog_direction():
+    facts = facts_for(
+        4, direction="ai_investment_research", custom_service="Разбор отчётов о закупках"
+    )
+
+    assert facts.direction.key == "ai_investment_research"
+    assert facts.service_type.description == "Разбор отчётов о закупках"
+
+
+@pytest.mark.parametrize("brand", ["Nike fake", "BlackRock Analytics", "Deutsche Bank Data"])
+def test_known_brands_are_rejected(brand: str):
+    with pytest.raises(BadRequestError, match="известный бренд"):
+        facts_for(1, brand_name=brand)
+
+
+def test_similar_but_different_brand_is_allowed():
+    assert facts_for(1, brand_name="Nikolai Research").params.brand_name == "Nikolai Research"

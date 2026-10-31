@@ -16,6 +16,7 @@ from src.shared.domain.exceptions import BadRequestError
 from src.shared.utils.time import current_datetime
 
 from ...domain.catalog import COUNTRIES, DIRECTIONS, SCALES, City, Country, Direction, ServiceType
+from ...domain.catalog.business import CUSTOM_KEY, custom_direction, custom_service_type
 from ...domain.catalog.people import (
     APPEARANCE,
     LIGHTING,
@@ -35,6 +36,7 @@ from ...domain.catalog.seeds import (
     PRICING_MODELS,
     SECTOR_FOCUS,
 )
+from ...domain.catalog.trademarks import find_known_brand
 from ...domain.enums import CompanyScale, Gender, TeamRole
 from ...domain.profile import Address, Brand, Contacts
 from ...domain.vo import GenerationParams
@@ -67,6 +69,8 @@ class GenerationRequest:
     scale: CompanyScale | None = None
     model: str | None = None
     with_photos: bool = True
+    custom_direction: str | None = None
+    custom_service: str | None = None
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -140,7 +144,8 @@ class CompanyFacts:
             "правовая форма": self.legal_form,
             "направление": self.direction.name_ru,
             "тип сервиса": f"{self.service_type.name_ru}: {self.service_type.description}",
-            "типичные клиенты": ", ".join(self.service_type.typical_clients),
+            "типичные клиенты": ", ".join(self.service_type.typical_clients)
+            or "определи сам по типу сервиса",
         }
 
 
@@ -160,17 +165,35 @@ def resolve_params(request: GenerationRequest, rng: random.Random) -> Generation
         return _choice(rng, options)
 
     country = pick("country", request.country, list(COUNTRIES))
-    direction = pick("direction", request.direction, list(DIRECTIONS))
-    service_type = pick(
-        "service_type",
-        request.service_type,
-        [item.key for item in DIRECTIONS[direction].service_types],
-    )
+
+    custom_dir = (request.custom_direction or "").strip() or None
+    custom_srv = (request.custom_service or "").strip() or None
+
+    if custom_dir:
+        # Своё направление: в каталоге для него нет типов, сервис тоже свой.
+        direction = CUSTOM_KEY
+        service_type = CUSTOM_KEY
+        custom_srv = custom_srv or custom_dir
+    else:
+        direction = pick("direction", request.direction, list(DIRECTIONS))
+        if custom_srv:
+            service_type = CUSTOM_KEY
+        else:
+            service_type = pick(
+                "service_type",
+                request.service_type,
+                [item.key for item in DIRECTIONS[direction].service_types],
+            )
     scale = pick("scale", request.scale, list(SCALES))
 
     brand_name = (request.brand_name or "").strip() or None
     if brand_name is None:
         randomized.append("brand_name")
+    elif known := find_known_brand(brand_name):
+        raise BadRequestError(
+            f"Название содержит известный бренд «{known}». Сайт выдавал бы себя за реальную "
+            "компанию, выберите другое название."
+        )
 
     model = request.model or openrouter_config.text_model
     if request.model is None:
@@ -184,6 +207,8 @@ def resolve_params(request: GenerationRequest, rng: random.Random) -> Generation
         scale=CompanyScale(scale),
         model=model,
         randomized=tuple(randomized),
+        custom_direction=custom_dir,
+        custom_service=custom_srv,
     )
 
 
@@ -288,8 +313,16 @@ def build_team(rng: random.Random, scale: CompanyScale) -> list[PersonSkeleton]:
 
 def build_facts(params: GenerationParams, rng: random.Random) -> CompanyFacts:
     country = COUNTRIES[params.country]
-    direction = DIRECTIONS[params.direction]
-    service_type = direction.service_type(params.service_type)
+    direction = (
+        custom_direction(params.custom_direction)
+        if params.custom_direction
+        else DIRECTIONS[params.direction]
+    )
+    service_type = (
+        custom_service_type(params.custom_service)
+        if params.custom_service
+        else direction.service_type(params.service_type)
+    )
     scale = SCALES[params.scale]
 
     city = _choice(rng, country.cities)

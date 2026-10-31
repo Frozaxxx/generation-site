@@ -7,6 +7,7 @@ from typing import ClassVar, Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from ...domain.catalog.trademarks import find_known_brand
 from ...domain.constants import FAQ_SIZE, MAX_BIO_LENGTH, MIN_BIO_LENGTH
 
 
@@ -53,6 +54,8 @@ class ConceptDraft(_Draft):
     def _no_legal_form(cls, value: str) -> str:
         if any(form in value.split() for form in ("GmbH", "AG", "UG", "KG")):
             raise ValueError("brand_name не должен содержать правовую форму")
+        if known := find_known_brand(value):
+            raise ValueError(f"brand_name содержит реальный бренд «{known}», придумай другое")
         return value
 
     @model_validator(mode="after")
