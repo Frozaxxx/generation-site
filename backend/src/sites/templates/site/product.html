@@ -1,0 +1,98 @@
+{% extends "site/base.html" %}
+{% block main %}
+    <section class="page-head">
+      <div class="wrap narrow">
+        <p class="hero-brand">{{ brand.name }}</p>
+        <h1>{{ product.name }}</h1>
+        <p class="lead">{{ copy.product_lead }}</p>
+      </div>
+    </section>
+
+    <section class="band">
+      <div class="wrap narrow prose">
+{% for paragraph in product.summary | paragraphs %}
+        <p>{{ paragraph }}</p>
+{% endfor %}
+      </div>
+    </section>
+
+    <section class="band band-surface">
+      <div class="wrap io-grid">
+        <div>
+          <h2>{{ ui.inputs }}</h2>
+          <ul class="ticks">
+{% for item in product.inputs %}
+            <li>{{ item }}</li>
+{% endfor %}
+          </ul>
+        </div>
+        <div>
+          <h2>{{ ui.outputs }}</h2>
+          <ul class="ticks">
+{% for item in product.outputs %}
+            <li>{{ item }}</li>
+{% endfor %}
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="band" aria-labelledby="process-detail">
+      <div class="wrap">
+        <h2 id="process-detail">{{ ui.process }}</h2>
+        <ol class="steps">
+{% for step in product.process %}
+          <li>
+            <h3>{{ step.title }}</h3>
+            <p>{{ step.description }}</p>
+          </li>
+{% endfor %}
+        </ol>
+      </div>
+    </section>
+
+    <section class="band band-surface">
+      <div class="wrap split">
+        <div>
+          <h2>{{ ui.delivery }}</h2>
+          <p>{{ product.delivery }}</p>
+        </div>
+        <div>
+          <h2>{{ ui.limitations }}</h2>
+          <p class="section-lead">{{ copy.limitations_lead }}</p>
+          <ul class="limits">
+{% for item in product.limitations %}
+            <li>{{ item }}</li>
+{% endfor %}
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="band" aria-labelledby="faq">
+      <div class="wrap narrow">
+        <h2 id="faq">{{ ui.faq }}</h2>
+        <div class="faq">
+{% for item in faq %}
+          <details{% if loop.first %} open{% endif %}>
+            <summary>{{ item.question }}</summary>
+            <p>{{ item.answer }}</p>
+          </details>
+{% endfor %}
+        </div>
+      </div>
+    </section>
+
+    <section class="cta">
+      <div class="wrap cta-row">
+        <div>
+          <h2>{{ copy.cta_title }}</h2>
+          <p>{{ ui.contact_note }}</p>
+        </div>
+        <p class="actions">
+          <a class="button button-inverse" href="mailto:{{ contacts.email }}">{{ ui.write_us }}</a>
+          <a class="button button-outline" href="tel:{{ contacts.phone }}">{{ contacts.phone_display }}</a>
+        </p>
+      </div>
+    </section>
+{% endblock %}

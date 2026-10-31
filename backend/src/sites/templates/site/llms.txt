@@ -1,0 +1,45 @@
+# {{ brand.name }}
+
+> {{ brand.tagline }}
+
+{{ brand.legal_name }}, {{ address.city }}. {{ ui.founded.format(year=history.founded_year) }}. {{ ui.employees.format(count=history.employees) }}.
+
+## {{ ui.nav_product }}: {{ product.name }}
+
+{{ product.summary }}
+
+{{ ui.limitations }}:
+{% for item in product.limitations %}
+- {{ item }}
+{% endfor %}
+
+## {{ ui.contacts }}
+
+- {{ ui.address }}: {{ address.street }} {{ address.house_number }}, {{ address.postal_code }} {{ address.city }}, {{ ui["country_" ~ address.country_code] }}
+- {{ ui.phone }}: {{ contacts.phone_display }}
+- {{ ui.email }}: {{ contacts.email }}
+- {{ ui.hours }}: {{ contacts.office_hours }}
+{% if ceo %}
+- {{ ui.management }}: {{ ceo.full_name }}
+{% endif %}
+
+## {{ ui.team }}
+{% for person in team %}
+- {{ person.full_name }}: {{ person.position }}
+{% endfor %}
+
+## {{ ui.faq }}
+{% for item in faq %}
+
+### {{ item.question }}
+
+{{ item.answer }}
+{% endfor %}
+
+## {{ ui.nav_home }}
+
+- [{{ ui.nav_home }}]({{ base_url }}/): {{ copy.home.description }}
+- [{{ ui.nav_product }}]({{ base_url }}/product.html): {{ copy.product.description }}
+- [{{ ui.nav_company }}]({{ base_url }}/company.html): {{ copy.company.description }}
+
+{{ ui.demo }}

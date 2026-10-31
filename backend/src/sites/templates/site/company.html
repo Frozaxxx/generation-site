@@ -1,0 +1,94 @@
+{% extends "site/base.html" %}
+{% block main %}
+    <section class="page-head">
+      <div class="wrap narrow">
+        <p class="hero-brand">{{ brand.legal_name }}</p>
+        <h1>{{ brand.name }}</h1>
+        <p class="lead">{{ copy.company_lead }}</p>
+        <ul class="facts">
+          <li>{{ ui.founded.format(year=history.founded_year) }}</li>
+          <li>{{ address.city }}</li>
+          <li>{{ ui.employees.format(count=history.employees) }}</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="band" aria-labelledby="history">
+      <div class="wrap history-grid">
+        <div class="prose">
+          <h2 id="history">{{ ui.history }}</h2>
+{% for paragraph in history.founding_story | paragraphs %}
+          <p>{{ paragraph }}</p>
+{% endfor %}
+          <h3>{{ ui.specialization }}</h3>
+{% for paragraph in history.specialization | paragraphs %}
+          <p>{{ paragraph }}</p>
+{% endfor %}
+        </div>
+        <div>
+          <h3 class="aside-title">{{ ui.milestones }}</h3>
+          <ol class="timeline">
+{% for milestone in history.milestones %}
+            <li>
+              <span class="year">{{ milestone.year }}</span>
+              <p class="milestone-title">{{ milestone.title }}</p>
+              <p>{{ milestone.description }}</p>
+            </li>
+{% endfor %}
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <section class="band band-surface" aria-labelledby="team">
+      <div class="wrap">
+        <h2 id="team">{{ ui.team }}</h2>
+        <p class="section-lead">{{ copy.team_lead }}</p>
+        <div class="team">
+{% for person in team %}
+          <article class="person">
+{% if person.photo_src %}
+            <img src="{{ person.photo_src }}" alt="{{ person.full_name }}, {{ person.position }}" width="640" height="800" loading="lazy" decoding="async">
+{% endif %}
+            <h3>{{ person.full_name }}</h3>
+            <p class="position">{{ person.position }}</p>
+            <p>{{ person.bio }}</p>
+            <details>
+              <summary>{{ ui.experience }}</summary>
+              <ul>
+{% for item in person.experience %}
+                <li>{{ item }}</li>
+{% endfor %}
+              </ul>
+              <p><span class="muted">{{ ui.education }}:</span> {{ person.education }}</p>
+            </details>
+          </article>
+{% endfor %}
+        </div>
+      </div>
+    </section>
+
+    <section class="band" aria-labelledby="contacts" id="contacts-section">
+      <div class="wrap split">
+        <div>
+          <h2 id="contacts">{{ ui.contacts }}</h2>
+          <p class="section-lead">{{ ui.contact_note }}</p>
+          <dl class="contact-list">
+            <div><dt>{{ ui.address }}</dt><dd>{{ address.street }} {{ address.house_number }}<br>{{ address.postal_code }} {{ address.city }}{% if address.district %} ({{ address.district }}){% endif %}<br>{{ address.state }}, {{ ui["country_" ~ address.country_code] }}</dd></div>
+            <div><dt>{{ ui.phone }}</dt><dd><a href="tel:{{ contacts.phone }}">{{ contacts.phone_display }}</a></dd></div>
+            <div><dt>{{ ui.email }}</dt><dd><a href="mailto:{{ contacts.email }}">{{ contacts.email }}</a></dd></div>
+            <div><dt>{{ ui.hours }}</dt><dd>{{ contacts.office_hours }}</dd></div>
+          </dl>
+        </div>
+        <div class="legal">
+          <h2>{{ ui.legal }}</h2>
+          <p>{{ brand.legal_name }}<br>{{ address.street }} {{ address.house_number }}<br>{{ address.postal_code }} {{ address.city }}</p>
+{% if ceo %}
+          <p><span class="muted">{{ ui.management }}:</span> {{ ceo.full_name }}</p>
+{% endif %}
+          <p><span class="muted">{{ ui.phone }}:</span> {{ contacts.phone_display }}<br><span class="muted">{{ ui.email }}:</span> {{ contacts.email }}</p>
+          <p class="demo-note">{{ ui.demo }}</p>
+        </div>
+      </div>
+    </section>
+{% endblock %}
