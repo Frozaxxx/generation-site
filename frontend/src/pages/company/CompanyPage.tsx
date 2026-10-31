@@ -19,6 +19,7 @@ import { errorMessage } from "@/shared/api";
 import { formatDateTime, formatUsd } from "@/shared/lib";
 import { Button, Notice, Panel } from "@/shared/ui";
 import { IssuesPanel } from "@/widgets/company-issues";
+import { CompanySites } from "@/widgets/company-sites";
 
 function PhotoSlot({
   company,
@@ -203,6 +204,10 @@ function CompanyEditor({ company, onUpdated }: { company: Company; onUpdated: (c
 
           <Panel title="Проверки">
             <IssuesPanel issues={company.issues} stale={form.dirty} />
+          </Panel>
+
+          <Panel title="Сайт">
+            <CompanySites company={company} dirty={form.dirty} />
           </Panel>
 
           <nav className="hidden rounded-lg border border-line bg-surface p-2 lg:block">
