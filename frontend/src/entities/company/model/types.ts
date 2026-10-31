@@ -116,6 +116,8 @@ export interface GenerationParams {
   scale: CompanyScale;
   model: string;
   randomized: string[];
+  custom_direction: string | null;
+  custom_service: string | null;
 }
 
 export interface GenerationInfo {
@@ -150,6 +152,7 @@ export interface CompanyListItem {
   legal_name: string;
   city: string;
   service_type: string;
+  service_label: string;
   scale: CompanyScale;
   status: CompanyStatus;
   revision: number;
@@ -163,6 +166,8 @@ export interface GenerateCompanyInput {
   country: string | null;
   direction: string | null;
   service_type: string | null;
+  custom_direction: string | null;
+  custom_service: string | null;
   scale: CompanyScale | null;
   model: string | null;
   with_photos: boolean;

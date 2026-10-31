@@ -8,7 +8,6 @@ import {
   type CompanyListItem,
   type CompanyStatus,
 } from "@/entities/company";
-import { useCatalogStore } from "@/entities/catalog";
 import { errorMessage } from "@/shared/api";
 import { formatDateTime } from "@/shared/lib";
 import { Button, Notice, Select, TextInput } from "@/shared/ui";
@@ -19,12 +18,6 @@ export function CompaniesPage() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const { catalog, load } = useCatalogStore();
-
-  useEffect(() => {
-    void load();
-  }, [load]);
-
   useEffect(() => {
     const timer = window.setTimeout(async () => {
       try {
@@ -41,11 +34,6 @@ export function CompaniesPage() {
     }, 250);
     return () => window.clearTimeout(timer);
   }, [search, status]);
-
-  const serviceLabel = (key: string) =>
-    Object.values(catalog?.service_types ?? {})
-      .flat()
-      .find((item) => item.key === key)?.label ?? key;
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -112,7 +100,7 @@ export function CompaniesPage() {
                     <p className="text-xs text-muted">{item.legal_name}</p>
                   </td>
                   <td className="px-4 py-3">{item.city}</td>
-                  <td className="px-4 py-3 text-muted">{serviceLabel(item.service_type)}</td>
+                  <td className="px-4 py-3 text-muted">{item.service_label}</td>
                   <td className="px-4 py-3">{SCALE_LABELS[item.scale]}</td>
                   <td className="px-4 py-3">
                     <StatusBadge status={item.status} />

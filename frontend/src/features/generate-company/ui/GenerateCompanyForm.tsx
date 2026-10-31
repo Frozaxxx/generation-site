@@ -7,6 +7,7 @@ import { errorMessage } from "@/shared/api";
 import { Button, Field, Notice, Select, TextInput } from "@/shared/ui";
 
 const RANDOM = "";
+const CUSTOM = "custom";
 
 interface GenerateCompanyFormProps {
   onStarted: (job: Job) => void;
@@ -24,6 +25,8 @@ export function GenerateCompanyForm({ onStarted }: GenerateCompanyFormProps) {
   const [country, setCountry] = useState(RANDOM);
   const [direction, setDirection] = useState(RANDOM);
   const [serviceType, setServiceType] = useState(RANDOM);
+  const [customDirection, setCustomDirection] = useState("");
+  const [customService, setCustomService] = useState("");
   const [scale, setScale] = useState(RANDOM);
   const [model, setModel] = useState(RANDOM);
   const [withPhotos, setWithPhotos] = useState(true);
@@ -36,6 +39,7 @@ export function GenerateCompanyForm({ onStarted }: GenerateCompanyFormProps) {
 
   const serviceTypes = useMemo(() => {
     if (!catalog) return [];
+    if (direction === CUSTOM) return [];
     const keys = direction ? [direction] : Object.keys(catalog.service_types);
     return keys.flatMap((key) => catalog.service_types[key] ?? []);
   }, [catalog, direction]);
@@ -44,6 +48,9 @@ export function GenerateCompanyForm({ onStarted }: GenerateCompanyFormProps) {
   if (!catalog || !llm) return <p className="text-sm text-muted">Загружаю справочник…</p>;
 
   const random = (label: string) => ({ value: RANDOM, label: `Случайно${label}` });
+  const custom = { value: CUSTOM, label: "Свой вариант…" };
+  const directionIsCustom = direction === CUSTOM;
+  const serviceIsCustom = directionIsCustom || serviceType === CUSTOM;
   const prices = new Map(llm.models.map((item) => [item.id, item]));
 
   async function submit(event: FormEvent) {
@@ -54,8 +61,10 @@ export function GenerateCompanyForm({ onStarted }: GenerateCompanyFormProps) {
       const job = await generateCompany({
         brand_name: brand.trim() || null,
         country: country || null,
-        direction: direction || null,
-        service_type: serviceType || null,
+        direction: directionIsCustom ? null : direction || null,
+        service_type: serviceIsCustom ? null : serviceType || null,
+        custom_direction: directionIsCustom ? customDirection.trim() || null : null,
+        custom_service: serviceIsCustom ? customService.trim() || null : null,
         scale: (scale || null) as CompanyScale | null,
         model: model || null,
         with_photos: withPhotos,
@@ -117,23 +126,50 @@ export function GenerateCompanyForm({ onStarted }: GenerateCompanyFormProps) {
           options={[
             random(""),
             ...catalog.directions.map((item) => ({ value: item.key, label: item.label })),
+            custom,
           ]}
         />
       </Field>
 
-      <Field
-        label="Тип B2B-сервиса"
-        hint={serviceTypes.find((item) => item.key === serviceType)?.description ?? undefined}
-      >
-        <Select
-          value={serviceType}
-          onChange={setServiceType}
-          options={[
-            random(""),
-            ...serviceTypes.map((item) => ({ value: item.key, label: item.label })),
-          ]}
-        />
-      </Field>
+      {directionIsCustom && (
+        <Field label="Своё направление" hint="Чем занимаются компании этого направления">
+          <TextInput
+            value={customDirection}
+            onChange={setCustomDirection}
+            placeholder="Например, ИИ для оценки рисков коммерческой недвижимости"
+          />
+        </Field>
+      )}
+
+      {!directionIsCustom && (
+        <Field
+          label="Тип B2B-сервиса"
+          hint={serviceTypes.find((item) => item.key === serviceType)?.description ?? undefined}
+        >
+          <Select
+            value={serviceType}
+            onChange={setServiceType}
+            options={[
+              random(""),
+              ...serviceTypes.map((item) => ({ value: item.key, label: item.label })),
+              custom,
+            ]}
+          />
+        </Field>
+      )}
+
+      {serviceIsCustom && (
+        <Field
+          label="Свой тип сервиса"
+          hint="Что сервис делает для клиента. Если пусто, возьмём описание направления."
+        >
+          <TextInput
+            value={customService}
+            onChange={setCustomService}
+            placeholder="Например, разбор отчётов о закупках государственных компаний"
+          />
+        </Field>
+      )}
 
       <Field label="Модель OpenRouter" hint="Цены за 1M входных / выходных токенов">
         <Select
@@ -171,7 +207,12 @@ export function GenerateCompanyForm({ onStarted }: GenerateCompanyFormProps) {
       {error && <Notice tone="error">{error}</Notice>}
 
       <div className="flex items-center gap-4">
-        <Button type="submit" variant="primary" busy={busy} disabled={!llm.configured}>
+        <Button
+          type="submit"
+          variant="primary"
+          busy={busy}
+          disabled={!llm.configured || (directionIsCustom && !customDirection.trim()) || (serviceType === CUSTOM && !customService.trim())}
+        >
           Создать компанию
         </Button>
         <span className="text-xs text-muted">

@@ -27,12 +27,36 @@ function parseError(status: number, payload: unknown): ApiError {
       details: error.details ?? null,
     });
   }
-  if (payload && typeof payload === "object" && "detail" in payload) {
-    // Ошибки валидации FastAPI (422).
+  if (status === 404 || status === 405) {
+    // Ответ не нашего формата: маршрута нет. Обычно на порту запущена старая версия бэкенда.
+    return new ApiError(status, {
+      code: "ROUTE_NOT_FOUND",
+      message:
+        "Бэкенд не знает этот запрос. Похоже, на порту 8000 запущена старая версия: остановите её " +
+        "(в том числе Docker-контейнер) и запустите backend заново.",
+      details: payload,
+    });
+  }
+  if (status === 422 && payload && typeof payload === "object" && "detail" in payload) {
+    const detail = (payload as { detail: unknown }).detail;
+    const fields = Array.isArray(detail)
+      ? detail
+          .map((item: { loc?: unknown[]; msg?: string }) =>
+            `${(item.loc ?? []).filter((part) => part !== "body").join(".")}: ${item.msg ?? ""}`,
+          )
+          .join("; ")
+      : String(detail);
     return new ApiError(status, {
       code: "VALIDATION_ERROR",
-      message: "Проверьте заполнение полей",
-      details: (payload as { detail: unknown }).detail,
+      message: `Сервер не принял данные: ${fields}`,
+      details: detail,
+    });
+  }
+  if (status >= 500) {
+    return new ApiError(status, {
+      code: "SERVER_UNAVAILABLE",
+      message: "Бэкенд не отвечает. Проверьте, что он запущен: uv run python main.py в папке backend.",
+      details: payload,
     });
   }
   return new ApiError(status, {
