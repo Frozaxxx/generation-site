@@ -1,5 +1,6 @@
 from typing import Any
 
+import shutil
 from uuid import UUID
 
 from pydantic import ValidationError
@@ -12,6 +13,7 @@ from ..domain.checks import Issue, check_profile
 from ..domain.entities import Company
 from ..domain.serialization import profile_from_dict
 from .dtos import CompanyFilters
+from .generation.photos import company_media_dir
 from .repos import CompanyRepository
 
 
@@ -87,3 +89,4 @@ class CompanyService:
         await self.get(company_id)
         await self._company_repo.delete(company_id)
         await self._transaction()
+        shutil.rmtree(company_media_dir(company_id), ignore_errors=True)

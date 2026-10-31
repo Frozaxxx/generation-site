@@ -2,6 +2,7 @@
 
 import io
 import itertools
+import re
 
 from PIL import Image
 from pydantic import BaseModel
@@ -15,12 +16,18 @@ from src.companies.application.generation.drafts import (
 )
 from src.llm.domain.budget import OperationBudget
 from src.llm.domain.vo import GeneratedImage, Usage
+from src.sites.application.drafts import SiteCopyDraft, TranslationDraft
 
 _counter = itertools.count(1)
 
 
 def _text(prefix: str, length: int) -> str:
     base = f"{prefix}: конкретное описание рабочего процесса аналитиков и результата. "
+    return (base * (length // len(base) + 1))[:length].strip()
+
+
+def _german(prefix: str, length: int) -> str:
+    base = f"{prefix}: konkrete Beschreibung der Arbeit von Analysten und des Ergebnisses. "
     return (base * (length // len(base) + 1))[:length].strip()
 
 
@@ -36,7 +43,9 @@ class FakeLLM:
         # Ответы смысловой проверки по очереди, по умолчанию замечаний нет.
         self.review_issues = list(review_issues or [])
 
-    async def complete_json[T: BaseModel](self, *, schema: type[T], budget: OperationBudget, **_):
+    async def complete_json[T: BaseModel](
+        self, *, schema: type[T], budget: OperationBudget, user: str = "", **_
+    ):
         self.calls.append(schema.__name__)
         budget.add(Usage(model="fake", input_tokens=100, output_tokens=200, cost_usd=0.001))
         number = next(_counter)
@@ -97,6 +106,39 @@ class FakeLLM:
                     }
                     for person_id in schema.expected_ids
                 ]
+            }
+        elif issubclass(schema, SiteCopyDraft):
+            brand = schema.brand or "Brand"
+            german = "Deutsch" in user
+            text = _german if german else _text
+            meta = {
+                "title": f"{brand}: "
+                + ("Berichte ohne Handarbeit" if german else "обзоры отчётности"),
+                "description": text("Beschreibung der Seite für Suche und soziale Netzwerke", 140),
+            }
+            data = {
+                "home": meta,
+                "product": meta,
+                "company": meta,
+                "hero_title": text("Berichte ohne manuellen Abgleich", 40),
+                "hero_lead": text("Einleitung", 120),
+                "audience_lead": text("Zielgruppe", 60),
+                "benefits_lead": text("Vorteile", 60),
+                "process_lead": text("Ablauf", 60),
+                "cta_title": text("So funktioniert der Service", 40),
+                "cta_text": text("Aufruf", 60),
+                "product_lead": text("Produkt", 80),
+                "limitations_lead": text("Grenzen", 60),
+                "company_lead": text("Unternehmen", 80),
+                "team_lead": text("Team", 60),
+            }
+        elif issubclass(schema, TranslationDraft):
+            # «Перевод»: немецкая фраза плюс те же числа и латинские термины, что в оригинале.
+            data = {
+                "items": {
+                    key: " ".join(["Übersetzung", *re.findall(r"\d+|[A-Za-z][\w&+.\-]*", text)])
+                    for key, text in schema.source.items()
+                }
             }
         elif issubclass(schema, ReviewDraft):
             data = {"issues": self.review_issues.pop(0) if self.review_issues else []}

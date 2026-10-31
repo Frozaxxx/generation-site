@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 from src.jobs.application.dtos import JobRead
 from src.llm.dependencies import ensure_llm_configured, new_budget, resolve_text_model
 from src.shared.application.dtos import Page
-from src.shared.dependencies import PaginationDep
+from src.shared.dependencies import DBSession, PaginationDep
 
 from ...application.catalog import build_catalog
 from ...application.dtos import (
@@ -133,8 +133,21 @@ async def approve_company(company_id: UUID, service: CompanyServiceDep) -> Compa
 
 
 @router.delete("/companies/{company_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_company(company_id: UUID, service: CompanyServiceDep) -> None:
+async def delete_company(
+    company_id: UUID,
+    service: CompanyServiceDep,
+    session: DBSession,
+) -> None:
+    """Удаляет компанию, её версии сайтов и файлы (фото, собранные сайты)."""
+
+    # Импорт здесь: модуль sites сам зависит от companies.
+    from src.sites.application.service import remove_site_files  # noqa: PLC0415
+    from src.sites.infra.database.repos.sites import SqlSiteVersionRepository  # noqa: PLC0415
+
+    sites = await SqlSiteVersionRepository(session).by_company(company_id)
     await service.delete(company_id)
+    for site in sites:
+        remove_site_files(site.id)
 
 
 @router.get("/companies/{company_id}/export")

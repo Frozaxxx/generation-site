@@ -6,6 +6,7 @@ import argparse
 import asyncio
 import json
 import logging
+import shutil
 import sys
 
 from pydantic import BaseModel, Field
@@ -16,6 +17,7 @@ from src.llm.dependencies import ensure_llm_configured, new_budget, resolve_text
 from src.llm.infra.openrouter import OpenRouterClient
 
 SCHEMA_FILE = DOCS_DIR / "company.schema.json"
+EXAMPLES_DIR = DOCS_DIR.parent / "examples"
 
 
 def _print(text: str) -> None:
@@ -152,6 +154,58 @@ def generate_company(args: argparse.Namespace) -> None:
     asyncio.run(_generate_company(args))
 
 
+async def _export_examples(args: argparse.Namespace) -> None:
+    from src.companies.application.dtos import CompanyFilters  # noqa: PLC0415
+    from src.companies.application.mappers import to_export  # noqa: PLC0415
+    from src.companies.domain.enums import CompanyStatus  # noqa: PLC0415
+    from src.companies.infra.database.repos.companies import (  # noqa: PLC0415
+        SqlCompanyRepository,
+    )
+    from src.core.database import session_factory  # noqa: PLC0415
+    from src.shared.application.dtos import Pagination  # noqa: PLC0415
+    from src.sites.application.pipeline import site_dir  # noqa: PLC0415
+    from src.sites.domain.enums import SiteStatus  # noqa: PLC0415
+    from src.sites.infra.database.repos.sites import SqlSiteVersionRepository  # noqa: PLC0415
+
+    target = EXAMPLES_DIR
+    exported = []
+    async with session_factory() as session:
+        companies = await SqlCompanyRepository(session).find(
+            Pagination(page=1, size=100), CompanyFilters(status=CompanyStatus.APPROVED)
+        )
+        for company in companies.items:
+            sites = await SqlSiteVersionRepository(session).by_company(company.id)
+            ready = [site for site in sites if site.status is SiteStatus.READY]
+            if not ready:
+                continue
+            slug = company.profile.brand.domain.split(".")[0]
+            folder = target / slug
+            if folder.exists():
+                shutil.rmtree(folder)
+            folder.mkdir(parents=True)
+            (folder / "company.json").write_text(
+                json.dumps(to_export(company), ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            for site in ready:
+                name = f"site-v{site.number}-{site.language.value}-{site.theme}"
+                shutil.copytree(site_dir(site.id), folder / name)
+            exported.append((company.profile.brand.legal_name, slug, len(ready)))
+            if len(exported) >= args.limit:
+                break
+
+    for legal_name, slug, count in exported:
+        _print(f"{legal_name}: examples/{slug} (сайтов: {count})")
+    if not exported:
+        _print("Нет утверждённых компаний с готовыми сайтами")
+
+
+def export_examples(args: argparse.Namespace) -> None:
+    """Выгружает примеры: JSON карточки и собранные сайты в examples/."""
+
+    asyncio.run(_export_examples(args))
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(prog="python -m src.cli")
     commands = parser.add_subparsers(dest="command", required=True)
@@ -169,11 +223,15 @@ def main() -> None:
     generate.add_argument("--model", default=None)
     generate.add_argument("--no-photos", action="store_true", help="Без фото команды")
 
+    examples = commands.add_parser("export-examples", help="Выгрузить примеры в examples/")
+    examples.add_argument("--limit", type=int, default=2, help="Сколько компаний выгрузить")
+
     args = parser.parse_args()
     {
         "export-schema": export_schema,
         "check-openrouter": check_openrouter,
         "generate-company": generate_company,
+        "export-examples": export_examples,
     }[args.command](args)
 
 

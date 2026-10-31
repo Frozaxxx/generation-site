@@ -1,12 +1,13 @@
 import uvicorn
 from fastapi.staticfiles import StaticFiles
 
-from src import router
+from src import preview_router, router
 from src.core.fastapi import app
 from src.core.settings import app_config, storage_config
 from src.shared.api.exception_handler import setup_exception_handlers
 
 app.include_router(router)
+app.include_router(preview_router)
 
 setup_exception_handlers(app)
 
