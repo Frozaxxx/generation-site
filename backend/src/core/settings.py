@@ -16,6 +16,8 @@ load_dotenv(ENV_FILE)
 
 INSTALLED_MODULES: tuple[str, ...] = (  # Добавь сюда модуль который готов к использованию
     "companies",
+    "jobs",
+    "llm",
 )
 
 # Рабочие данные приложения: база, фото команды, собранные сайты.
@@ -27,6 +29,7 @@ class AppConfig(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="APP_")
 
     name: str = Field(default="Generation Site", description="Название приложения.")
+    host: str = Field(default="127.0.0.1", description="В Docker - 0.0.0.0.")
     port: int = 8000
     version: str = Field(default="0.1.0", description="Актуальная версия приложения.")
 
@@ -57,6 +60,18 @@ class OpenRouterConfig(BaseSettings):
         "openai/gpt-4.1-mini",
         "anthropic/claude-sonnet-4.5",
     ]
+
+    image_cost_estimate_usd: float = Field(
+        default=0.05,
+        ge=0,
+        description="Оценка стоимости одного фото, если прайс модели недоступен.",
+    )
+    fallback_prompt_price_per_mtok: float = Field(
+        default=3.0,
+        description="Цена за 1M входных токенов, если модели нет в прайсе OpenRouter.",
+    )
+    fallback_completion_price_per_mtok: float = Field(default=15.0)
+    app_title: str = Field(default="Generation Site", description="X-Title для OpenRouter.")
 
     max_retries: int = Field(default=3, ge=0, le=5, description="Повторы на один запрос.")
     request_timeout: float = Field(default=120.0, gt=0)

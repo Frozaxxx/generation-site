@@ -3,6 +3,8 @@ import sys
 
 from pythonjsonlogger.json import JsonFormatter
 
+from src.llm.infra.redaction import SecretRedactingFilter
+
 
 def configure_logging(log_level: str = "INFO") -> logging.Logger:
     """Настройка логирования в формате JSON."""
@@ -21,6 +23,7 @@ def configure_logging(log_level: str = "INFO") -> logging.Logger:
 
     handler = logging.StreamHandler(sys.stdout)
     handler.setFormatter(formatter)
+    handler.addFilter(SecretRedactingFilter())
 
     root_logger = logging.getLogger()
     root_logger.setLevel(level)
