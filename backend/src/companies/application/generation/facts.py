@@ -16,7 +16,15 @@ from src.shared.domain.exceptions import BadRequestError
 from src.shared.utils.time import current_datetime
 
 from ...domain.catalog import COUNTRIES, DIRECTIONS, SCALES, City, Country, Direction, ServiceType
-from ...domain.catalog.people import APPEARANCE, NAME_ORIGINS, PHOTO_SETTINGS, NameOrigin
+from ...domain.catalog.people import (
+    APPEARANCE,
+    LIGHTING,
+    NAME_ORIGINS,
+    OFFICE_SPOTS,
+    OFFICES,
+    POSES,
+    NameOrigin,
+)
 from ...domain.catalog.seeds import (
     DELIVERY_FORMATS,
     DEPARTMENTS,
@@ -183,16 +191,45 @@ def _pick_origin(rng: random.Random) -> NameOrigin:
     return rng.choices(NAME_ORIGINS, weights=[origin.weight for origin in NAME_ORIGINS])[0]
 
 
-def random_appearance(rng: random.Random, gender: Gender) -> str:
+@dataclass(slots=True)
+class _Pools:
+    """Варианты без повторов внутри одной команды."""
+
+    rng: random.Random
+    left: dict[str, list[str]] = field(default_factory=dict)
+
+    def take(self, key: str, options: tuple[str, ...]) -> str:
+        pool = self.left.get(key)
+        if not pool:
+            pool = list(options)
+            self.rng.shuffle(pool)
+            self.left[key] = pool
+        return pool.pop()
+
+
+def random_appearance(rng: random.Random, gender: Gender, pools: _Pools | None = None) -> str:
+    pools = pools or _Pools(rng)
     parts = [
-        _choice(rng, APPEARANCE.hair[gender]),
-        _choice(rng, APPEARANCE.clothing[gender]),
-        _choice(rng, APPEARANCE.expression),
+        pools.take(f"hair-{gender}", APPEARANCE.hair[gender]),
+        f"wearing {pools.take(f'clothing-{gender}', APPEARANCE.clothing[gender])}",
+        pools.take("expression", APPEARANCE.expression),
         _choice(rng, APPEARANCE.accessories),
     ]
     if gender is Gender.MALE:
         parts.insert(1, _choice(rng, APPEARANCE.facial_hair))
-    return ", ".join(part for part in parts if part)
+    pose = pools.take("pose", POSES)
+    spot = pools.take("spot", OFFICE_SPOTS)
+    light = _choice(rng, LIGHTING)
+    return f"{', '.join(part for part in parts if part)}. Pose: {pose}, {spot}. Light: {light}"
+
+
+def _genders(rng: random.Random, size: int) -> list[Gender]:
+    """Минимум двое каждого пола, остальное случайно."""
+
+    females = rng.randint(2, size - 2)
+    genders = [Gender.FEMALE] * females + [Gender.MALE] * (size - females)
+    rng.shuffle(genders)
+    return genders
 
 
 def build_team(rng: random.Random, scale: CompanyScale) -> list[PersonSkeleton]:
@@ -204,18 +241,20 @@ def build_team(rng: random.Random, scale: CompanyScale) -> list[PersonSkeleton]:
     head_departments = rng.sample(DEPARTMENTS, 2)
     used_names: set[str] = set()
     used_last: set[str] = set()
+    pools = _Pools(rng)
     team: list[PersonSkeleton] = []
 
-    for index, role in enumerate(roles):
-        # Примерно поровну женщин и мужчин, но без жёсткого чередования.
-        gender = _choice(rng, (Gender.FEMALE, Gender.MALE))
+    for index, (role, gender) in enumerate(zip(roles, _genders(rng, size), strict=True)):
         origin = _pick_origin(rng)
         first_names = origin.female if gender is Gender.FEMALE else origin.male
 
         while True:
             first = _choice(rng, first_names)
             last = _choice(rng, origin.last_names)
-            if first not in used_names and last not in used_last:
+            # Фамилии не должны совпадать и по корню (Becker / Becker-Smirnow).
+            if first not in used_names and not any(
+                last in other or other in last for other in used_last
+            ):
                 break
             origin = _pick_origin(rng)
             first_names = origin.female if gender is Gender.FEMALE else origin.male
@@ -240,7 +279,7 @@ def build_team(rng: random.Random, scale: CompanyScale) -> list[PersonSkeleton]:
                 role=role,
                 department=department,
                 heritage=origin.heritage,
-                appearance=random_appearance(rng, gender),
+                appearance=random_appearance(rng, gender, pools),
             )
         )
 
@@ -295,7 +334,7 @@ def build_facts(params: GenerationParams, rng: random.Random) -> CompanyFacts:
         current_year=current_year,
         employees=rng.randint(*scale.employees),
         team=build_team(rng, params.scale),
-        photo_setting=_choice(rng, PHOTO_SETTINGS),
+        photo_setting=_choice(rng, OFFICES),
         seeds={
             "основание": _choice(rng, FOUNDING_ARCHETYPES),
             "отраслевой фокус": _choice(rng, SECTOR_FOCUS),

@@ -38,6 +38,9 @@ def test_team_structure(scale: CompanyScale):
         assert roles.count(TeamRole.DEPARTMENT_HEAD) == 2
         assert len({person.id for person in team}) == len(team)
         assert len({person.last_name for person in team}) == len(team)
+        genders = [person.gender for person in team]
+        assert min(genders.count(g) for g in set(genders)) >= 2
+        assert len(set(genders)) == 2
 
 
 def test_user_values_are_kept_and_random_ones_recorded():
@@ -64,3 +67,10 @@ def test_same_params_give_different_companies():
 def test_slugify():
     assert slugify("Jörg Weiß") == "joerg-weiss"
     assert slugify("Şahin & Partner") == "sahin-partner"
+
+
+def test_team_photos_do_not_repeat_clothing_and_pose():
+    for seed in range(10):
+        team = facts_for(seed, scale=CompanyScale.MEDIUM).team
+        poses = [person.appearance.split("Pose: ")[1].split(".")[0] for person in team]
+        assert len(set(poses)) == len(poses)

@@ -152,7 +152,7 @@ NAME_ORIGINS: tuple[NameOrigin, ...] = (
         heritage="Eastern European",
         female=("Olga", "Irina", "Daria", "Ekaterina"),
         male=("Dmitri", "Alexander", "Sergej", "Viktor"),
-        last_names=("Petrow", "Iwanow", "Becker-Smirnow", "Wolkow", "Sokolow"),
+        last_names=("Petrow", "Iwanow", "Smirnow", "Wolkow", "Sokolow", "Morosow"),
     ),
     NameOrigin(
         key="greek",
@@ -178,12 +178,14 @@ APPEARANCE = Appearance(
     hair={
         Gender.FEMALE: (
             "shoulder-length dark brown hair",
-            "straight blonde hair tied back",
+            "straight blonde hair tied back in a ponytail",
             "short auburn bob",
             "long wavy light-brown hair",
-            "dark hair in a low bun",
+            "dark hair in a loose low bun",
             "chin-length ash-blonde hair",
             "curly black hair",
+            "short pixie cut, greying at the temples",
+            "red hair, shoulder length",
         ),
         Gender.MALE: (
             "short dark-blond hair",
@@ -191,46 +193,102 @@ APPEARANCE = Appearance(
             "receding hairline, short grey-brown hair",
             "wavy dark hair, slightly messy",
             "short black hair with a side part",
-            "buzz cut",
+            "shaved head",
             "medium-length light-brown hair combed back",
+            "thick grey hair",
+            "curly brown hair",
         ),
     },
-    facial_hair=("clean-shaven", "clean-shaven", "short stubble", "neatly trimmed beard"),
+    facial_hair=(
+        "clean-shaven",
+        "clean-shaven",
+        "short stubble",
+        "neatly trimmed beard",
+        "full beard",
+    ),
     clothing={
         Gender.FEMALE: (
-            "navy blazer over a plain white top",
-            "grey fine-knit sweater",
-            "light-blue button-down shirt",
-            "black turtleneck",
-            "camel blazer, simple silver necklace",
-            "dark-green blouse",
+            "a navy blazer over a plain white T-shirt",
+            "a mustard-yellow knit sweater",
+            "a light-blue denim shirt",
+            "a black turtleneck",
+            "a camel coat-style blazer and a thin silver necklace",
+            "a dark-green silk blouse",
+            "a striped Breton top under an open grey cardigan",
+            "a burgundy wrap dress",
+            "a white linen shirt with rolled sleeves",
         ),
         Gender.MALE: (
-            "navy blazer over an open-collar white shirt, no tie",
-            "grey merino sweater over a collared shirt",
-            "light-blue oxford shirt, sleeves slightly rolled",
-            "dark charcoal suit jacket, no tie",
-            "black crew-neck sweater",
-            "checked flannel shirt under a casual blazer",
+            "a navy blazer over an open-collar white shirt, no tie",
+            "a dark-green quarter-zip pullover",
+            "a light-blue oxford shirt with sleeves rolled up",
+            "a charcoal suit, white shirt and a dark knitted tie",
+            "a black crew-neck T-shirt under a casual grey jacket",
+            "a checked flannel shirt",
+            "a burgundy V-neck sweater over a white T-shirt",
+            "a denim shirt",
+            "a beige chore jacket over a black T-shirt",
         ),
     },
     expression=(
-        "slight natural smile",
-        "relaxed, friendly expression",
-        "calm and attentive look",
-        "warm smile with crow's feet",
-        "neutral, confident expression",
+        "a slight natural smile",
+        "a relaxed, friendly expression",
+        "a calm, attentive look",
+        "a warm wide smile",
+        "a neutral, confident expression",
+        "caught mid-laugh",
+        "a thoughtful half-smile",
     ),
-    accessories=("", "", "", "thin metal-frame glasses", "dark acetate glasses"),
+    accessories=(
+        "",
+        "",
+        "",
+        "",
+        "thin metal-frame glasses",
+        "dark acetate glasses",
+        "a wristwatch",
+    ),
 )
 
+# Поза и кадр - у каждого свои, иначе портреты выглядят как один шаблон.
+POSES: tuple[str, ...] = (
+    "head-and-shoulders, body turned slightly to the left, looking into the camera",
+    "waist-up, arms loosely crossed, standing",
+    "seated at a desk with a laptop, three-quarter view, looking up at the camera",
+    "standing by a window, looking slightly past the camera",
+    "leaning against a wall, hands in pockets, half-body shot",
+    "head-and-shoulders, head tilted a little, close crop",
+    "seated in a meeting room chair, leaning forward slightly, elbows on the table",
+    "standing in a corridor, walking pose captured mid-step, glancing at the camera",
+    "waist-up, holding a coffee mug, turned to the right",
+)
 
-# Общий стиль съёмки на компанию: все портреты как будто из одной фотосессии.
-PHOTO_SETTINGS: tuple[str, ...] = (
-    "bright modern office with softly blurred plants and glass partitions in the background",
-    "plain light-grey studio backdrop with soft gradient",
-    "loft office with exposed brick, background strongly blurred",
-    "meeting room by a large window, out-of-focus city view behind",
-    "warm wooden interior with bookshelves, shallow depth of field",
-    "white wall with soft daylight shadows",
+# Свет и мелкие особенности кадра, чтобы фото не выглядели как одна серия рендеров.
+LIGHTING: tuple[str, ...] = (
+    "soft overcast daylight from a window on the left",
+    "warm late-afternoon light with gentle shadows",
+    "mixed office lighting, slightly cool colour cast",
+    "bright daylight, a little overexposed highlights on the window side",
+    "diffuse light, low contrast",
+)
+
+# Офис компании: общий для всей команды, но каждый снят в своём месте.
+OFFICES: tuple[str, ...] = (
+    "a converted brick warehouse office with tall windows and wooden floors",
+    "a bright open-plan office with white walls, plants and glass meeting rooms",
+    "an old-building (Altbau) office with high ceilings, stucco and herringbone parquet",
+    "a modern office in a high-rise with a view over the city",
+    "a small co-working space with concrete walls, shelves and warm lamps",
+    "a quiet office with light oak furniture, bookshelves and large monitors",
+)
+
+OFFICE_SPOTS: tuple[str, ...] = (
+    "next to the window",
+    "in front of a bookshelf",
+    "in the kitchen area",
+    "at their desk",
+    "in a glass meeting room",
+    "by a whiteboard with blurred notes",
+    "in the hallway",
+    "near a large plant",
 )
