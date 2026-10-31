@@ -11,4 +11,6 @@ def upgrade_database() -> None:
     config = Config(str(BASE_DIR / "alembic.ini"))
     config.set_main_option("script_location", str(BASE_DIR / "migrations"))
     config.set_main_option("sqlalchemy.url", database_config.url)
+    # Не даём alembic перенастроить логирование приложения (и снять фильтр секретов).
+    config.attributes["configure_logger"] = False
     command.upgrade(config, "head")

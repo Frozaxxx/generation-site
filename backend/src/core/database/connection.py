@@ -10,6 +10,8 @@ engine = create_async_engine(
     url=database_config.url,
     echo=database_config.echo,
     hide_parameters=True,
+    # Фоновые задачи пишут прогресс параллельно с запросами панели.
+    connect_args={"timeout": 30} if database_config.url.startswith("sqlite") else {},
 )
 
 
