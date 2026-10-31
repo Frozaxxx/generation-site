@@ -157,6 +157,7 @@ export interface CompanyListItem {
   status: CompanyStatus;
   revision: number;
   team_size: number;
+  sites_count: number;
   created_at: string;
   updated_at: string;
 }

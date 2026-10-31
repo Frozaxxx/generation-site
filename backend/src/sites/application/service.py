@@ -94,6 +94,17 @@ class SiteService:
             raise NotFoundError(f"Версия сайта {site_id} не найдена")
         return site
 
+    async def recent(self) -> list[tuple[SiteVersion, int | None]]:
+        """Все версии сайтов с текущей ревизией их компаний (для пометки «устарел»)."""
+
+        sites = await self._sites.recent()
+        revisions: dict[UUID, int | None] = {}
+        for site in sites:
+            if site.company_id not in revisions:
+                company = await self._companies.read(site.company_id)
+                revisions[site.company_id] = company.revision if company else None
+        return [(site, revisions[site.company_id]) for site in sites]
+
     async def by_company(self, company_id: UUID) -> list[SiteVersion]:
         return await self._sites.by_company(company_id)
 

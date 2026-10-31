@@ -3,6 +3,7 @@ export {
   deleteSite,
   fetchCompanySites,
   fetchSite,
+  fetchSites,
   fetchThemes,
   siteDownloadUrl,
   sitePreviewUrl,

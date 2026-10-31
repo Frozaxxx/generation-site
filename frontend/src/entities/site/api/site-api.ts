@@ -7,6 +7,10 @@ export function fetchCompanySites(companyId: string): Promise<SiteVersion[]> {
   return requestJson(`/companies/${companyId}/sites`);
 }
 
+export function fetchSites(): Promise<SiteVersion[]> {
+  return requestJson("/sites");
+}
+
 export function fetchSite(siteId: string): Promise<SiteVersion> {
   return requestJson(`/sites/${siteId}`);
 }

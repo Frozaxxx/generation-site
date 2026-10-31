@@ -34,6 +34,12 @@ async def get_themes() -> list[ThemeRead]:
     ]
 
 
+@router.get("/sites", response_model=list[SiteRead])
+async def get_sites(service: SiteServiceDep) -> list[SiteRead]:
+    """Все собранные версии сайтов, новые сверху."""
+    return [SiteRead.from_entity(site, revision) for site, revision in await service.recent()]
+
+
 @router.post(
     "/companies/{company_id}/sites",
     status_code=status.HTTP_202_ACCEPTED,

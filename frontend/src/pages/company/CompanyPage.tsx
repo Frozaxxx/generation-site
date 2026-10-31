@@ -202,12 +202,12 @@ function CompanyEditor({ company, onUpdated }: { company: Company; onUpdated: (c
             </div>
           </Panel>
 
-          <Panel title="Проверки">
-            <IssuesPanel issues={company.issues} stale={form.dirty} />
-          </Panel>
-
           <Panel title="Сайт">
             <CompanySites company={company} dirty={form.dirty} />
+          </Panel>
+
+          <Panel title="Проверки">
+            <IssuesPanel issues={company.issues} stale={form.dirty} />
           </Panel>
 
           <nav className="hidden rounded-lg border border-line bg-surface p-2 lg:block">

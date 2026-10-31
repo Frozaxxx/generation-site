@@ -23,6 +23,15 @@ class SqlSiteVersionRepository(SqlAlchemyRepository[SiteVersion, SiteVersionOrm]
         rows = (await self._session.execute(stmt)).scalars().all()
         return [self.model_mapper.from_model(row) for row in rows]
 
+    async def recent(self, limit: int = 100) -> list[SiteVersion]:
+        stmt = select(self.model).order_by(self.model.created_at.desc()).limit(limit)
+        rows = (await self._session.execute(stmt)).scalars().all()
+        return [self.model_mapper.from_model(row) for row in rows]
+
+    async def counts_by_company(self) -> dict[UUID, int]:
+        stmt = select(self.model.company_id, func.count()).group_by(self.model.company_id)
+        return dict((await self._session.execute(stmt)).tuples().all())
+
     async def next_number(self, company_id: UUID) -> int:
         stmt = select(func.max(self.model.number)).where(self.model.company_id == company_id)
         return (await self._session.scalar(stmt) or 0) + 1

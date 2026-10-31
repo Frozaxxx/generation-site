@@ -36,14 +36,21 @@ async def get_catalog() -> CatalogRead:
 @router.get("/companies", response_model=Page[CompanyListItem])
 async def get_companies(
     service: CompanyServiceDep,
+    session: DBSession,
     pagination: PaginationDep,
     filters: Annotated[CompanyFilters, Query()],
 ) -> Page[CompanyListItem]:
     """Библиотека созданных компаний."""
 
+    from src.sites.infra.database.repos.sites import SqlSiteVersionRepository  # noqa: PLC0415
+
     page = await service.find(pagination, filters)
+    counts = await SqlSiteVersionRepository(session).counts_by_company()
     return Page.create(
-        items=[to_list_item(company) for company in page.items],
+        items=[
+            to_list_item(company).model_copy(update={"sites_count": counts.get(company.id, 0)})
+            for company in page.items
+        ],
         total=page.total,
         page=page.page,
         size=page.size,

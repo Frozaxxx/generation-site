@@ -72,6 +72,11 @@ async def test_site_build_preview_and_download(client: AsyncClient, site_llm: Fa
     traversal = await client.get(f"/preview/{site['id']}/assets/%2e%2e/%2e%2e/%2e%2e/app.sqlite3")
     assert traversal.status_code == 404
 
+    listing = (await client.get("/api/v1/sites")).json()
+    assert site["id"] in {item["id"] for item in listing}
+    companies = (await client.get("/api/v1/companies")).json()["items"]
+    assert next(c for c in companies if c["id"] == company["id"])["sites_count"] == 1
+
     archive = await client.get(f"/api/v1/sites/{site['id']}/download")
     assert archive.headers["content-type"] == "application/zip"
     names = zipfile.ZipFile(io.BytesIO(archive.content)).namelist()

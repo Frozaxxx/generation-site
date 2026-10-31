@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import {
   fetchCompanies,
@@ -18,6 +18,7 @@ export function CompaniesPage() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
   useEffect(() => {
     const timer = window.setTimeout(async () => {
       try {
@@ -87,12 +88,17 @@ export function CompaniesPage() {
                 <th className="px-4 py-3 font-medium">Сервис</th>
                 <th className="px-4 py-3 font-medium">Масштаб</th>
                 <th className="px-4 py-3 font-medium">Статус</th>
+                <th className="px-4 py-3 font-medium">Сайт</th>
                 <th className="px-4 py-3 text-right font-medium">Изменена</th>
               </tr>
             </thead>
             <tbody>
               {items.map((item) => (
-                <tr key={item.id} className="border-b border-line last:border-0 hover:bg-sunken">
+                <tr
+                  key={item.id}
+                  onClick={() => navigate(`/companies/${item.id}`)}
+                  className="cursor-pointer border-b border-line last:border-0 hover:bg-sunken"
+                >
                   <td className="px-4 py-3">
                     <Link to={`/companies/${item.id}`} className="font-medium hover:text-accent">
                       {item.brand_name}
@@ -105,6 +111,9 @@ export function CompaniesPage() {
                   <td className="px-4 py-3">
                     <StatusBadge status={item.status} />
                     <span className="ml-2 text-xs text-faint">ревизия {item.revision}</span>
+                  </td>
+                  <td className="px-4 py-3 text-muted">
+                    {item.sites_count > 0 ? `Версий: ${item.sites_count}` : "Не собран"}
                   </td>
                   <td className="px-4 py-3 text-right text-muted">{formatDateTime(item.updated_at)}</td>
                 </tr>

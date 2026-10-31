@@ -4,6 +4,7 @@ import { NavLink } from "react-router-dom";
 const links = [
   { to: "/companies", label: "Компании", end: true },
   { to: "/companies/new", label: "Новая компания", end: true },
+  { to: "/sites", label: "Сайты", end: false },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
