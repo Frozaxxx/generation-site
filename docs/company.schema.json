@@ -74,7 +74,7 @@
         },
         "client_problem": {
           "description": "Проблема клиента до сервиса.",
-          "maxLength": 2000,
+          "maxLength": 3000,
           "minLength": 40,
           "title": "Client Problem",
           "type": "string"
@@ -261,14 +261,14 @@
         },
         "founding_story": {
           "description": "Как и почему появилась компания.",
-          "maxLength": 2000,
+          "maxLength": 3000,
           "minLength": 40,
           "title": "Founding Story",
           "type": "string"
         },
         "specialization": {
           "description": "В чём компания сильна и что не делает.",
-          "maxLength": 2000,
+          "maxLength": 3000,
           "minLength": 40,
           "title": "Specialization",
           "type": "string"
@@ -375,7 +375,7 @@
           "title": "Department"
         },
         "bio": {
-          "maxLength": 700,
+          "maxLength": 1000,
           "minLength": 80,
           "title": "Bio",
           "type": "string"
@@ -473,7 +473,7 @@
           "type": "string"
         },
         "summary": {
-          "maxLength": 2000,
+          "maxLength": 3000,
           "minLength": 40,
           "title": "Summary",
           "type": "string"

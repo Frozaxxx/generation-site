@@ -4,7 +4,7 @@ import logging
 
 import httpx
 import pytest
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from src.core.settings import OpenRouterConfig
 from src.llm.domain.budget import OperationBudget
@@ -118,6 +118,27 @@ async def test_invalid_answer_is_repaired_with_feedback():
     assert "employees" in repair_messages[-1]["content"]
     # Негодный ответ тоже стоит денег и учитывается.
     assert budget.requests == 2
+
+
+async def test_repair_feedback_explains_length():
+    long_city = "Б" * 50
+
+    class Short(BaseModel):
+        city: str = Field(max_length=20)
+
+    fake = FakeOpenRouter(
+        [
+            httpx.Response(200, json=chat(json.dumps({"city": long_city}))),
+            httpx.Response(200, json=chat('{"city": "Berlin"}')),
+        ]
+    )
+
+    await make_client(fake).complete_json(
+        model=MODEL, system="s", user="u", schema=Short, budget=OperationBudget(limit_usd=1)
+    )
+
+    feedback = fake.bodies()[1]["messages"][-1]["content"]
+    assert "сейчас 50 символов, нужно не больше 20" in feedback
 
 
 async def test_retries_are_limited():

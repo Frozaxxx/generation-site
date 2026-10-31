@@ -53,10 +53,28 @@ class _RetryableError(Exception):
 
 
 def _validation_feedback(error: ValidationError) -> str:
-    lines = [
-        f"- {'.'.join(str(part) for part in item['loc']) or '<root>'}: {item['msg']}"
-        for item in error.errors(include_url=False)[:MAX_ERROR_DETAILS]
-    ]
+    """Ошибки схемы в виде, понятном модели: где, что не так и что сделать."""
+
+    lines = []
+    for item in error.errors(include_url=False)[:MAX_ERROR_DETAILS]:
+        path = ".".join(str(part) for part in item["loc"]) or "<root>"
+        ctx = item.get("ctx") or {}
+        value = item.get("input")
+
+        if item["type"] == "string_too_long" and isinstance(value, str):
+            limit = ctx.get("max_length")
+            message = (
+                f"сейчас {len(value)} символов, нужно не больше {limit}. "
+                f"Перепиши короче, примерно до {int(limit * 0.8)} символов"
+            )
+        elif item["type"] == "string_too_short" and isinstance(value, str):
+            message = f"сейчас {len(value)} символов, нужно не меньше {ctx.get('min_length')}"
+        elif item["type"] in {"too_long", "too_short"} and isinstance(value, list):
+            message = f"{item['msg']} (сейчас {len(value)})"
+        else:
+            message = item["msg"]
+        lines.append(f"- {path}: {message}")
+
     return "\n".join(lines)
 
 

@@ -18,7 +18,7 @@ SCHEMA_VERSION = 1
 
 Text = Annotated[str, Field(min_length=1)]
 ShortText = Annotated[str, Field(min_length=1, max_length=160)]
-Paragraph = Annotated[str, Field(min_length=40, max_length=2000)]
+Paragraph = Annotated[str, Field(min_length=40, max_length=3000)]
 Year = Annotated[int, Field(ge=1990, le=2100)]
 
 

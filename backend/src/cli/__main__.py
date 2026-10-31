@@ -5,6 +5,7 @@
 import argparse
 import asyncio
 import json
+import logging
 import sys
 
 from pydantic import BaseModel, Field
@@ -101,6 +102,8 @@ async def _generate_company(args: argparse.Namespace) -> None:
     from src.jobs.infra.database.repos.jobs import SqlJobRepository  # noqa: PLC0415
 
     ensure_llm_configured()
+    # Повторы и замечания видны в задаче, в терминал - только её этапы.
+    logging.basicConfig(level=logging.ERROR)
     storage_config.media_dir.mkdir(parents=True, exist_ok=True)
     await asyncio.to_thread(upgrade_database)
 
@@ -135,6 +138,8 @@ async def _generate_company(args: argparse.Namespace) -> None:
 
     if current.error:
         _print(f"Ошибка: {current.error.code} - {current.error.message}")
+        if isinstance(current.error.details, dict) and current.error.details.get("reason"):
+            _print(f"Причина: {current.error.details['reason']}")
         return
     _print(f"Компания: {current.result_id}")
     _print(f"Этапы: {', '.join(STAGE_LABELS[stage] for stage in current.stages)}")
