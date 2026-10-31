@@ -1,0 +1,1 @@
+export { NewCompanyPage } from "./NewCompanyPage";
