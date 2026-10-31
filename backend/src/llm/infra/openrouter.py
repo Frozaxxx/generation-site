@@ -150,10 +150,12 @@ class OpenRouterClient:
 
             prompt_chars = sum(len(message["content"]) for message in messages)
             pricing = await self.pricing.get(model)
-            budget.ensure_can_spend(pricing.cost(prompt_chars // CHARS_PER_TOKEN, max_tokens))
+            estimate = pricing.cost(prompt_chars // CHARS_PER_TOKEN, max_tokens)
 
             try:
-                payload = await self._post("/chat/completions", body, model, budget)
+                payload = await self._reserved_post(
+                    "/chat/completions", body, model, budget, estimate
+                )
             except _RetryableError as error:
                 last_reason = error.reason
                 await self._backoff(attempt, error.retry_after, model, error.reason)
@@ -229,18 +231,19 @@ class OpenRouterClient:
         last_reason = ""
 
         for attempt in range(self._config.max_retries + 1):
-            budget.ensure_can_spend(self._config.image_cost_estimate_usd)
+            estimate = self._config.image_cost_estimate_usd
             try:
                 if use_images_api:
-                    payload = await self._post(
+                    payload = await self._reserved_post(
                         "/images",
                         {"model": model, "prompt": prompt, "n": 1, "aspect_ratio": aspect_ratio},
                         model,
                         budget,
+                        estimate,
                     )
                     image = self._image_from_images_api(payload)
                 else:
-                    payload = await self._post(
+                    payload = await self._reserved_post(
                         "/chat/completions",
                         {
                             "model": model,
@@ -250,6 +253,7 @@ class OpenRouterClient:
                         },
                         model,
                         budget,
+                        estimate,
                     )
                     image = self._image_from_chat(payload)
             except _RetryableError as error:
@@ -314,6 +318,20 @@ class OpenRouterClient:
             "Authorization": f"Bearer {secret}",
             "X-Title": self._config.app_title,
         }
+
+    async def _reserved_post(
+        self,
+        path: str,
+        body: dict[str, Any],
+        model: str,
+        budget: OperationBudget,
+        estimate: float,
+    ) -> dict[str, Any]:
+        budget.reserve(estimate)
+        try:
+            return await self._post(path, body, model, budget)
+        finally:
+            budget.release(estimate)
 
     async def _post(
         self,

@@ -18,6 +18,9 @@ class OperationBudget:
     requests: int = 0
     input_tokens: int = 0
     output_tokens: int = 0
+    # Оценки запросов, которые уже отправлены, но ещё не вернулись: при параллельных
+    # запросах (фото, ветки графа) лимит не должен превышаться суммой ожиданий.
+    reserved_usd: float = 0.0
     history: list[Usage] = field(default_factory=list)
 
     def __post_init__(self) -> None:
@@ -29,16 +32,26 @@ class OperationBudget:
         return max(self.limit_usd - self.spent_usd, 0.0)
 
     def ensure_can_spend(self, estimate_usd: float) -> None:
-        if self.spent_usd + estimate_usd > self.limit_usd:
+        if self.spent_usd + self.reserved_usd + estimate_usd > self.limit_usd:
             raise BudgetExceededError(
                 f"Лимит операции ${self.limit_usd:.2f}: потрачено ${self.spent_usd:.4f}, "
                 f"следующий запрос может стоить до ${estimate_usd:.4f}",
                 details={
                     "limit_usd": self.limit_usd,
                     "spent_usd": round(self.spent_usd, 6),
+                    "reserved_usd": round(self.reserved_usd, 6),
                     "estimate_usd": round(estimate_usd, 6),
                 },
             )
+
+    def reserve(self, estimate_usd: float) -> None:
+        """Проверяет лимит и резервирует оценку до получения фактической стоимости."""
+
+        self.ensure_can_spend(estimate_usd)
+        self.reserved_usd += estimate_usd
+
+    def release(self, estimate_usd: float) -> None:
+        self.reserved_usd = max(self.reserved_usd - estimate_usd, 0.0)
 
     def add(self, usage: Usage) -> None:
         self.history.append(usage)

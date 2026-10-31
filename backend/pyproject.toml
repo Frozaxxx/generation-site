@@ -10,6 +10,7 @@ dependencies = [
     "fastapi[standard]>=0.120.0",
     "httpx>=0.28.1",
     "jinja2>=3.1.6",
+    "langgraph>=1.0",
     "pillow>=12.0.0",
     "pydantic>=2.12.0",
     "pydantic-settings>=2.11.0",
@@ -35,6 +36,7 @@ dev = [
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 testpaths = ["tests"]
+filterwarnings = ["ignore::DeprecationWarning:langsmith.*"]
 
 
 # ---------------------------------------------------------------------------
