@@ -12,7 +12,7 @@ from src.llm.domain.budget import OperationBudget
 from src.shared.application.transaction import Transaction
 from src.shared.domain.exceptions import NotFoundError
 
-from ...domain.catalog.people import NAME_ORIGINS, PHOTO_SETTINGS
+from ...domain.catalog.people import NAME_ORIGINS, OFFICES
 from ...domain.entities import Company
 from ...domain.profile import Photo
 from ...domain.serialization import profile_to_dict
@@ -110,7 +110,7 @@ class CompanyAIService:
             "Central European",
         )
         setting = (company.generation.concept.get("фон фото") if company.generation else None) or (
-            PHOTO_SETTINGS[0]
+            OFFICES[0]
         )
         skeleton = PersonSkeleton(
             id=person.id,

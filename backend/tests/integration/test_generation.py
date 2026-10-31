@@ -44,9 +44,12 @@ async def _generate(client: AsyncClient, **body) -> dict:
 async def test_generate_company_end_to_end(client: AsyncClient, fake_llm: FakeLLM):
     job = await _generate(client, scale="small", country="DE")
 
-    assert job["stages"] == ["concept", "product", "team", "review", "photos", "save"]
+    assert job["stages"] == ["concept", "texts", "review", "photos", "save"]
     assert job["cost_usd"] > 0
-    assert fake_llm.calls[:4] == ["ConceptDraft", "ProductDraft", "TeamDraft", "ReviewDraft"]
+    assert fake_llm.calls[0] == "ConceptDraft"
+    assert set(fake_llm.calls[1:3]) == {"ProductDraft", "TeamDraft"}
+    assert fake_llm.calls[3] == "ReviewDraft"
+    assert fake_llm.calls.count("image") == 5
 
     company = (await client.get(f"/api/v1/companies/{job['result_id']}")).json()
     profile = company["profile"]
@@ -91,3 +94,18 @@ async def test_model_must_be_allowed(client: AsyncClient, fake_llm: FakeLLM):
 
     assert response.status_code == 400
     assert response.json()["error"]["code"] == "MODEL_NOT_ALLOWED"
+
+
+async def test_review_errors_trigger_one_revision(client: AsyncClient, fake_llm: FakeLLM):
+    issue = {"path": "product.summary", "severity": "error", "message": "Обещает рекомендации"}
+    fake_llm.review_issues = [[issue], [issue]]
+
+    job = await _generate(client, with_photos=False)
+
+    assert fake_llm.calls.count("RevisionDraft") == 1
+    assert fake_llm.calls.count("ReviewDraft") == 2
+    company = (await client.get(f"/api/v1/companies/{job['result_id']}")).json()
+    assert company["profile"]["brand"]["tagline"] == "Исправленный слоган без обещаний"
+    review = [i for i in company["issues"] if i["code"].startswith("review_")]
+    assert review
+    assert all(i["severity"] == "warning" for i in review)

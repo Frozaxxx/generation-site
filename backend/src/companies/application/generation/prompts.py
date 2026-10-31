@@ -16,7 +16,9 @@ STYLE_RULES = """\
 - Не выдумывай реальных клиентов, партнёров, инвесторов, награды, отзывы, сертификаты и лицензии
   (в том числе BaFin, ISO). Не обещай доходность и не давай инвестиционных рекомендаций.
 - Не описывай функции, которых нет: личный кабинет, загрузку файлов на сайте, онлайн-оплату.
-- Названия компаний, людей, городов и улиц оставляй латиницей, как они даны.
+- Имена людей, названия компаний, городов и улиц пиши латиницей ровно как даны, без
+  транслитерации: «Friederike Lorenz», а не «Фридерике Лоренц».
+- Не повторяй правовую форму в каждом предложении: в тексте достаточно названия бренда.
 - Никаких шаблонных переменных вида {name} или [CITY]: только готовый текст.
 Отвечай одним JSON-объектом по схеме, без пояснений."""
 
@@ -48,9 +50,13 @@ def concept_prompt(facts: CompanyFacts, avoid: list[dict[str, str]]) -> tuple[st
         else "Других компаний пока нет."
     )
 
+    ceo = next(person for person in facts.team if person.role.value == "ceo")
     user = f"""\
 Факты, которые менять нельзя:
 {_json(facts.summary())}
+
+Основатель и руководитель компании: {ceo.full_name}, {ceo.age} лет. Других людей по именам
+не упоминай: команду опишут отдельно.
 
 Концепт, который нужно развернуть:
 {_json(facts.seeds)}
@@ -60,10 +66,12 @@ def concept_prompt(facts: CompanyFacts, avoid: list[dict[str, str]]) -> tuple[st
 {avoid_block}
 
 Что вернуть (длина в символах - ориентир, превышать нельзя):
-- brand_name; tagline - одна фраза о пользе, 60–120 символов; product_name - название продукта;
+- brand_name; product_name - название продукта;
+- tagline: короткий слоган о результате для клиента, 5–10 слов, 40–100 символов, без
+  отглагольных существительных («Предоставление…», «Обеспечение…»);
 - niche: суть специализации одним предложением, до 250 символов;
 - founding_story: 2–3 абзаца, 700–1500 символов: кто, когда и почему основал компанию,
-  с конкретной исходной проблемой; основатель - будущий руководитель компании;
+  с конкретной исходной проблемой; основатель - {ceo.full_name};
 - specialization: в чём компания сильна и чего сознательно не делает, 400–1000 символов;
 - milestones: 3–5 этапов, первый - год основания {facts.founded_year}, последний не позже
   {facts.current_year}, годы по возрастанию; описание этапа до 300 символов;
@@ -110,27 +118,22 @@ def _person_line(person: PersonSkeleton) -> dict[str, Any]:
     }
 
 
-def team_prompt(
-    facts: CompanyFacts,
-    concept: dict[str, Any],
-    product: dict[str, Any],
-) -> tuple[str, str]:
+def team_prompt(facts: CompanyFacts, concept: dict[str, Any]) -> tuple[str, str]:
     system = "Ты пишешь краткие профессиональные биографии сотрудников для сайта.\n" + STYLE_RULES
     people = [_person_line(person) for person in facts.team]
+    story = {
+        "бренд": concept["brand_name"],
+        "продукт": concept["product_name"],
+        "ниша": concept["niche"],
+        "история": concept["founding_story"],
+        "специализация": concept["specialization"],
+    }
     user = f"""\
 Компания:
 {_json(facts.summary())}
 
-История и продукт (не противоречь им):
-{
-        _json(
-            {
-                "история": concept["founding_story"],
-                "специализация": concept["specialization"],
-                "продукт": product["summary"],
-            }
-        )
-    }
+История и специализация (не противоречь им):
+{_json(story)}
 
 Сотрудники (id, имена, возраст и роли менять нельзя):
 {_json(people)}
@@ -145,6 +148,34 @@ def team_prompt(
   реальных компаний; годы согласованы с возрастом и с годом основания {facts.founded_year};
 - education: вуз и направление (реальные вузы допустимы).
 Опыт людей должен быть разным: не делай всех выходцами из банков или консалтинга."""
+    return system, user
+
+
+def revision_prompt(
+    facts: CompanyFacts,
+    concept: dict[str, Any],
+    product: dict[str, Any],
+    issues: list[dict[str, str]],
+) -> tuple[str, str]:
+    system = "Ты редактор и исправляешь описание продукта по замечаниям.\n" + STYLE_RULES
+    user = f"""\
+Факты компании:
+{_json(facts.summary())}
+
+История и специализация:
+{_json({"история": concept["founding_story"], "специализация": concept["specialization"]})}
+
+Текущий слоган: {concept["tagline"]}
+Текущее описание продукта:
+{_json(product)}
+
+Замечания редактора:
+{_json(issues)}
+
+Исправь только то, на что указывают замечания, остальное оставь как есть. Если замечание
+ошибочное, не меняй текст ради него. Верни слоган (tagline) и описание продукта целиком в
+той же структуре: summary, inputs, process, outputs, limitations, benefits, delivery, faq
+(ровно {FAQ_SIZE} вопросов)."""
     return system, user
 
 
@@ -174,16 +205,23 @@ _ROLE_EN = {
 }
 
 
-def photo_prompt(person: PersonSkeleton, setting: str) -> str:
+def photo_prompt(person: PersonSkeleton, office: str) -> str:
+    """
+    Портрет для страницы команды. Общий офис на компанию, а поза, место, одежда и свет у
+    каждого свои: так команда выглядит как одна съёмка, но не как серия одинаковых рендеров.
+    """
+
+    gender = "woman" if person.gender.value == "female" else "man"
     return (
-        f"Professional corporate team portrait of a {person.age}-year-old "
-        f"{person.heritage} {'woman' if person.gender.value == 'female' else 'man'}, "
-        f"{_ROLE_EN[person.role.value]} at a German "
-        f"investment-research firm. {person.appearance}. "
-        f"Setting: {setting}. Head and shoulders, looking at the camera, slightly off-centre. "
-        "Shot on a full-frame camera with an 85mm lens at f/2.8, soft natural daylight. "
-        "Realistic skin texture with pores and fine lines, natural asymmetry, a few stray hairs, "
-        "no beauty retouching, no plastic skin, true-to-life colours. "
-        "Looks like an actual photo from a company website team page. "
+        f"Photo of a {person.age}-year-old {person.heritage} {gender}, "
+        f"{_ROLE_EN[person.role.value]} at a small German investment-research company, "
+        f"photographed for the team page of the company website. "
+        f"{person.appearance}. "
+        f"Location: the company office, {office}. "
+        "Shot by a professional photographer on a full-frame camera, 50–85mm lens, natural "
+        "depth of field, colours as in an unedited photo. "
+        "Real person, not a model: realistic skin with pores, fine lines and small "
+        "blemishes, slightly uneven features, natural hair with flyaways, clothes with "
+        "creases. No beauty retouching, no studio backdrop, no symmetrical stock-photo pose. "
         "No text, no logos, no watermark."
     )

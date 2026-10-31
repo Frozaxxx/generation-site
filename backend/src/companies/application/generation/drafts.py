@@ -99,6 +99,12 @@ class ProductDraft(_Draft):
     faq: list[FaqDraft] = Field(min_length=FAQ_SIZE, max_length=FAQ_SIZE)
 
 
+class RevisionDraft(ProductDraft):
+    """Исправленное описание продукта и слоган после смысловой проверки."""
+
+    tagline: str = Field(min_length=10, max_length=160)
+
+
 class PersonDraft(_Draft):
     id: str
     position: str = Field(min_length=3, max_length=150)

@@ -10,6 +10,7 @@ from src.companies.application.generation.drafts import (
     ConceptDraft,
     ProductDraft,
     ReviewDraft,
+    RevisionDraft,
     TeamDraft,
 )
 from src.llm.domain.budget import OperationBudget
@@ -30,8 +31,10 @@ def _png() -> bytes:
 
 
 class FakeLLM:
-    def __init__(self) -> None:
+    def __init__(self, review_issues: list[list[dict]] | None = None) -> None:
         self.calls: list[str] = []
+        # Ответы смысловой проверки по очереди, по умолчанию замечаний нет.
+        self.review_issues = list(review_issues or [])
 
     async def complete_json[T: BaseModel](self, *, schema: type[T], budget: OperationBudget, **_):
         self.calls.append(schema.__name__)
@@ -79,6 +82,8 @@ class FakeLLM:
                     for i in range(1, 6)
                 ],
             }
+            if issubclass(schema, RevisionDraft):
+                data["tagline"] = "Исправленный слоган без обещаний"
         elif issubclass(schema, TeamDraft):
             data = {
                 "people": [
@@ -94,7 +99,7 @@ class FakeLLM:
                 ]
             }
         elif issubclass(schema, ReviewDraft):
-            data = {"issues": []}
+            data = {"issues": self.review_issues.pop(0) if self.review_issues else []}
         else:
             raise TypeError(f"unexpected schema {schema}")
 
