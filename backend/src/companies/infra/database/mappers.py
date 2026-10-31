@@ -1,9 +1,7 @@
-from datetime import datetime
-
 from pydantic import TypeAdapter
 
-from src.core.settings import timezone
 from src.shared.infra.database.mappers import ModelMapper
+from src.shared.infra.database.types import aware
 
 from ...domain.entities import Company
 from ...domain.enums import CompanyStatus
@@ -15,14 +13,6 @@ _params_adapter = TypeAdapter(GenerationParams)
 _generation_adapter = TypeAdapter(GenerationInfo)
 
 
-def _aware(value: datetime | None) -> datetime | None:
-    """SQLite теряет часовой пояс, возвращаем его при чтении."""
-
-    if value is None or value.tzinfo is not None:
-        return value
-    return value.replace(tzinfo=timezone)
-
-
 class CompanyMapper(ModelMapper[Company, CompanyOrm]):
     """Преобразует компанию между доменной сущностью и ORM-моделью."""
 
@@ -30,8 +20,8 @@ class CompanyMapper(ModelMapper[Company, CompanyOrm]):
     def from_model(model: CompanyOrm) -> Company:
         return Company(
             id=model.id,
-            created_at=_aware(model.created_at),  # pyright: ignore[reportArgumentType]
-            updated_at=_aware(model.updated_at),  # pyright: ignore[reportArgumentType]
+            created_at=aware(model.created_at),  # pyright: ignore[reportArgumentType]
+            updated_at=aware(model.updated_at),  # pyright: ignore[reportArgumentType]
             params=_params_adapter.validate_python(model.params),
             profile=profile_from_dict(model.profile),
             status=CompanyStatus(model.status),
@@ -41,7 +31,7 @@ class CompanyMapper(ModelMapper[Company, CompanyOrm]):
                 if model.generation is not None
                 else None
             ),
-            approved_at=_aware(model.approved_at),
+            approved_at=aware(model.approved_at),
         )
 
     @staticmethod

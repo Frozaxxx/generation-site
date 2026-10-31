@@ -1,0 +1,28 @@
+name: generation-site
+
+services:
+
+  backend:
+    build:
+      context: ./backend
+    container_name: generation-site-backend
+    env_file:
+      - ./backend/.env
+    environment:
+      - TZ=Europe/Berlin
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    volumes:
+      - backend-data:/app/data
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+
+volumes:
+  backend-data:
+
+networks:
+  default:
+    name: generation-site-network
