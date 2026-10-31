@@ -173,7 +173,7 @@ function CompanyEditor({ company, onUpdated }: { company: Company; onUpdated: (c
           photoSlot={(person) => <PhotoSlot company={company} person={person} onUpdated={onUpdated} />}
         />
 
-        <aside className="space-y-5 lg:sticky lg:top-6 lg:self-start">
+        <aside className="min-w-0 space-y-5">
           <Panel>
             <div className="space-y-4">
               <div className="flex items-center justify-between">

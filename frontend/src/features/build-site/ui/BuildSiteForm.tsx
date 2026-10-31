@@ -94,7 +94,10 @@ export function BuildSiteForm({ companyId, disabledReason, onBuilt }: BuildSiteF
             <button
               key={item.key}
               type="button"
-              onClick={() => setTheme(item.key)}
+              onClick={() => {
+                setTheme(item.key);
+                setAccent(null);
+              }}
               title={item.description}
               className={`flex items-center gap-2 rounded-md border px-2.5 py-2 text-left text-sm ${
                 theme === item.key ? "border-accent bg-accent-soft font-medium" : "border-line"
@@ -104,7 +107,10 @@ export function BuildSiteForm({ companyId, disabledReason, onBuilt }: BuildSiteF
                 className="flex size-6 shrink-0 items-center justify-center rounded border border-line"
                 style={{ background: item.background }}
               >
-                <span className="size-3 rounded-sm" style={{ background: accent ?? item.accent }} />
+                <span
+                  className="size-3 rounded-sm"
+                  style={{ background: theme === item.key && accent ? accent : item.accent }}
+                />
               </span>
               {item.name}
             </button>
@@ -114,7 +120,12 @@ export function BuildSiteForm({ companyId, disabledReason, onBuilt }: BuildSiteF
       </div>
 
       <label className="flex items-center justify-between gap-3 text-sm">
-        <span>Свой акцентный цвет</span>
+        <span>
+          Свой акцентный цвет
+          <span className="block text-xs text-muted">
+            {accent ? `Для темы ${current?.name ?? theme}` : "По умолчанию цвет темы"}
+          </span>
+        </span>
         <span className="flex items-center gap-2">
           <input
             type="color"
